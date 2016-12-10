@@ -29,6 +29,7 @@ function setupGlobalVariables() {
 		minLerpAmt = 0.0;
 		maxLerpAmt = 0.8;
 		randomColor = true;
+		frameTimer = millis();
 	}
 	
 	// SIMULATION VARIABLES
@@ -469,7 +470,7 @@ var BodySim = function( num ) {
 		for( var i = 0 ; i < this.N ; i++ ) {
 			if( this.B[i].m === 0 ) {
 				append( ind,  i );
-				console.log( "removed a body!" );
+				//console.log( "removed a body!" );
 			}
 		}
 		this.N -= ind.length;
@@ -532,11 +533,13 @@ function draw() {
 	if( S.T.numGenerations > maxGen ) {
 		maxGen = S.T.numGenerations;
 	}
-	console.log( maxGen , maxRecDepth );
+	//console.log( maxGen , maxRecDepth );
+	console.log( millis() - frameTimer );
+	frameTimer = millis();
 }
 
 function mousePressed() {
-	divColor = color(255 , 255 , 0 , 255 );
+	//divColor = color(255 , 255 , 0 , 255 );
 	if( reversePhysics ) {
 		reversePhysics = false; 
 	} else { 
