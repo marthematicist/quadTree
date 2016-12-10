@@ -536,6 +536,7 @@ function draw() {
 }
 
 function mouseClicked() {
+	divColor = color(255 , 0 , 0 , 255 );
 	if( reversePhysics ) {
 		reversePhysics = false; 
 	} else { 
