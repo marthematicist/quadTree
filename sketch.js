@@ -21,8 +21,8 @@ function setupGlobalVariables() {
 		divWeight = 0.5
 		// body draw variables
 		drawBodies = true;
-		bodyDiam = 5;
-		bodyAlpha = 50;
+		bodyDiam = 2;
+		bodyAlpha = 30;
 		bodyColor = color( 255 , 255 , 255 , bodyAlpha );
 		fillAlpha = 3;
 		baseFillColor = color( 0 , 200 , 255 , fillAlpha );
@@ -34,7 +34,7 @@ function setupGlobalVariables() {
 	// SIMULATION VARIABLES
 	{
 		// number of bodies
-		numBodies = 100;
+		numBodies = 80;
 		// simulation area
 		simArea = 100;
 		// linear conversion factor: sim to window
@@ -58,7 +58,7 @@ function setupGlobalVariables() {
 		// probability of negative particle
 		negProb = 0.5;
 		// PHYSICS CONSTANTS
-		reversePhysics = true;
+		reversePhysics = false;
 		dt = 1.0 / ( 200 );
 		edgeSpringConstant = 1000;
 		frictionConstant = 0.1;
@@ -104,7 +104,8 @@ var Body = function() {
 	// method to draw the body to the screen
 	this.draw = function() {
 		if( this.m > 0 ) {
-			fill( 255-red(this.c) , 255-blue(this.c) , 255-green(this.c) , bodyAlpha );
+			//fill( 255-red(this.c) , 255-blue(this.c) , 255-green(this.c) , bodyAlpha );
+			fill( 255 , 255 , 255 , bodyAlpha );
 			var c = sim2WinVect( this.x );
 			ellipse( c.x , c.y , bodyDiam , bodyDiam );
 		}
@@ -535,10 +536,10 @@ function draw() {
 }
 
 function touchStarted() {
-	reversePhysics = false;
+	reversePhysics = true;
 }
 function touchEnded() {
-	reversePhysics = true;
+	reversePhysics = false;
 }
 
 
