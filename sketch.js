@@ -16,7 +16,7 @@ function setupGlobalVariables() {
 		// tree draw variables
 		drawTreeFill = true;
 		drawTreeDiv = true;
-		divColor = color( 128 , 128 , 128 , 64 );
+		divColor = color( 128 , 128 , 128 , 128 );
 		treeFillColor = color( 128 , 128 , 128 , 64 );
 		divWeight = 0.5
 		// body draw variables
@@ -535,11 +535,13 @@ function draw() {
 	console.log( maxGen , maxRecDepth );
 }
 
-function touchStarted() {
-	reversePhysics = true;
+function mouseClicked() {
+	if( reversePhysics ) {
+		reversePhysics = false; 
+	} else { 
+		reversePhysics = true; 
+	}
 }
-function touchEnded() {
-	reversePhysics = false;
-}
+
 
 
