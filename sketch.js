@@ -14,18 +14,26 @@ function setupGlobalVariables() {
 		// general draw variables
 		bgColor = color( 0 , 0 , 0 , 255 );
 		// tree draw variables
+		drawTreeFill = true;
+		drawTreeDiv = true;
 		divColor = color( 128 , 128 , 128 , 255 );
 		treeFillColor = color( 128 , 128 , 128 , 64 );
 		divWeight = 0.5
 		// body draw variables
+		drawBodies = true;
 		bodyDiam = 5;
 		bodyColor = color( 255 , 255 , 255 , 255 );
+		fillAlpha = 40;
+		baseFillColor = color( 0 , 200 , 255 , fillAlpha );
+		minLerpAmt = 0.4;
+		maxLerpAmt = 0.4;
+		randomColor = true;
 	}
 	
 	// SIMULATION VARIABLES
 	{
 		// number of bodies
-		numBodies = 200;
+		numBodies = 50;
 		// simulation area
 		simArea = 100;
 		// linear conversion factor: sim to window
@@ -55,6 +63,9 @@ function setupGlobalVariables() {
 		frictionConstant = 0.1;
 		universalConstant = 1;
 		epsilon = min(xExt,yExt)*0.1;
+		// max recursion depth
+		maxDepth = 15;
+		maxRecDepth = 0;
 	}
 }
 
@@ -86,10 +97,18 @@ var Body = function() {
 	
 	// method to draw the body to the screen
 	this.draw = function() {
-		fill( bodyColor );
-		var c = sim2WinVect( this.x );
-		ellipse( c.x , c.y , bodyDiam , bodyDiam );
+		if( this.m > 0 ) {
+			fill( bodyColor );
+			var c = sim2WinVect( this.x );
+			ellipse( c.x , c.y , bodyDiam , bodyDiam );
+		}
 	}
+	
+	if( randomColor ) {
+		var rc = color( random(0,255) , random(0,255) , random(0,255) , fillAlpha );
+		var la = random( minLerpAmt , maxLerpAmt );
+		this.c = lerpColor( baseFillColor , rc , la );
+	};
 };
 
 // function to create a new QuadTree object
@@ -111,6 +130,7 @@ var QuadTree = function( center , halfDimX , halfDimY ) {
 	this.parent = 0;
 	this.body = 0;
 	this.numGenerations = 0;
+	this.depth = 0;
 	
 	// method to determine which child a body belongs in
 	// returns integer: NE = 0 , NW = 1 , SW = 2 , SE = 3
@@ -138,21 +158,27 @@ var QuadTree = function( center , halfDimX , halfDimY ) {
 							   this.center.y + 0.5*this.halfDimY );
 		this.children[0] = new QuadTree( c0 , 0.5*halfDimX , 0.5*halfDimY );
 		this.children[0].parent = this;
+		this.children[0].depth = this.depth + 1;
 		var c1 = createVector( this.center.x - 0.5*this.halfDimX ,
 							   this.center.y + 0.5*this.halfDimY );
 		this.children[1] = new QuadTree( c1 , 0.5*halfDimX , 0.5*halfDimY );
 		this.children[1].parent = this;
+		this.children[1].depth = this.depth + 1;
 		var c2 = createVector( this.center.x - 0.5*this.halfDimX ,
 							   this.center.y - 0.5*this.halfDimY );
 		this.children[2] = new QuadTree( c2 , 0.5*halfDimX , 0.5*halfDimY );
 		this.children[2].parent = this;
+		this.children[2].depth = this.depth + 1;
 		var c3 = createVector( this.center.x + 0.5*this.halfDimX ,
 							   this.center.y - 0.5*this.halfDimY );
 		this.children[3] = new QuadTree( c3 , 0.5*halfDimX , 0.5*halfDimY );
 		this.children[3].parent = this;
+		this.children[3].depth = this.depth + 1;
 		this.hasChildren = true;
 		
 		this.changeParentNumGenerations( 1 );
+		
+		if( this.depth > maxRecDepth ) { maxRecDepth = this.depth; }
 	}
 	
 	// method to increment parent generation counts
@@ -174,13 +200,47 @@ var QuadTree = function( center , halfDimX , halfDimY ) {
 		// otherwise there are no children
 		else {
 			// if there is already a body in this tree,
-			// create children and add the existing and new
-			// bodies to the appropriate children
 			if( this.hasBody ) {
-				this.createChildren();
-				this.children[ this.whichChild( this.body ) ].addBody( this.body );
-				this.children[ this.whichChild( b ) ].addBody( b );
-				this.hasBody = false;
+				//  and if we haven't reached max depth
+				if( this.depth <= maxDepth ) {
+					// create children and add the existing and new
+					// bodies to the appropriate children
+					this.createChildren();
+					this.children[ this.whichChild( this.body ) ].addBody( this.body );
+					this.children[ this.whichChild( b ) ].addBody( b );
+					this.hasBody = false;
+				} 
+				// if at max depth
+				else {
+					// combine the bodies by setting the mass of one to 0
+					// and keeping the other with mass = sum of the bodies
+					// momentum is conserved
+					// charge will be the charge of the more massive body
+					var a = new Body();
+					// new position
+					a.x = p5.Vector.lerp( b.x , this.body.x , b.m / ( b.m + this.body.m ) );
+					// momentum for bodies
+					var m1 = p5.Vector.mult( b.v , b.m );
+					var m2 = p5.Vector.mult( this.body.v , this.body.m );
+					// new velocity (momentum conserved)
+					a.v = p5.Vector.mult( p5.Vector.add( m1 , m2 ) , 1 / ( b.m + this.body.m ) );
+					// new mass
+					a.m = b.m + this.body.m;
+					// new color
+					a.c = lerpColor( b.c , this.body.c , b.m / ( b.m + this.body.m ) );
+					// new charge
+					if( b.m > this.body.m ) { a.p = b.p; } 
+					else { a.p = this.body.p; }
+					// set this.body to new body
+					this.body.x = createVector( a.x.x , a.x.y );
+					this.body.v = createVector( a.v.x , a.v.y );
+					this.body.a = createVector( 0 , 0 );
+					this.body.c = a.c;
+					this.body.m = a.m;
+					this.body.p = a.p;
+					// set other body for removal
+					b.m = 0;
+				}
 			}
 			// otherwise there is no body, so place the body in this tree
 			else {
@@ -208,7 +268,7 @@ var QuadTree = function( center , halfDimX , halfDimY ) {
 	// method to color children with bodies
 	this.fillChildren = function() {
 		if( this.hasBody ) {
-			fill( treeFillColor );
+			fill( this.body.c );
 			var c = sim2WinVect( this.center );
 			var hdx = sim2Win( this.halfDimX );
 			var hdy = sim2Win( this.halfDimY );
@@ -228,7 +288,7 @@ var BodySim = function( num ) {
 	// number of bodies
 	this.N = num;
 	// array of bodies
-	this.B = new Array( numBodies );
+	this.B = new Array( num );
 	// quadtree
 	this.T = createQuadTree( simCenter , 0.5*xExt , 0.5*yExt );
 	// define bodies and populate the quadTree
@@ -241,7 +301,7 @@ var BodySim = function( num ) {
 	// method to draw the bodies
 	this.drawBodies = function() {
 		noStroke();
-		for( var i = 0 ; i < numBodies ; i++ ) {
+		for( var i = 0 ; i < this.N ; i++ ) {
 			this.B[i].draw();
 		}
 	};
@@ -265,7 +325,7 @@ var BodySim = function( num ) {
 	this.updateTree = function() {
 		this.T = createQuadTree( simCenter , 0.5*xExt , 0.5*yExt );
 		// populate the quadTree
-		for( var i = 0 ; i < numBodies ; i++ ) {
+		for( var i = 0 ; i < this.N ; i++ ) {
 			this.T.addBody( this.B[i] );
 		}
 	};
@@ -400,6 +460,22 @@ var BodySim = function( num ) {
 		}
 	};
 	
+	// method to remove bodies with zero mass
+	this.removeZeroMasses = function() {
+		ind = [];
+		for( var i = 0 ; i < this.N ; i++ ) {
+			if( this.B[i].m === 0 ) {
+				append( ind,  i );
+				console.log( "removed a body!" );
+			}
+		}
+		this.N -= ind.length;
+		reverse( ind );
+		for( var i = 0 ; i < ind.length ; i++ ) {
+			this.B.splice( ind[i] , 1 );
+		}
+	}
+	
 };
 
 
@@ -413,8 +489,10 @@ function setup() {
 	S = new BodySim( numBodies );
 	// evolve the simulation 1/2 step
 	S.evolveHalfStep();
-	
 	maxGen = 0;
+	maxRecDepth = 0;
+	
+	background( 0 , 0 , 0 );
 }
 
 function draw() {
@@ -440,15 +518,16 @@ function draw() {
 	// evolve the simulation full steps
 	S.evolveFullStep(1);
 	S.updateTree();
+	S.removeZeroMasses();
 	// draw QuadTree
-	S.drawTree( true , true );
+	S.drawTree( drawTreeFill , drawTreeDiv );
 	
 	// draw bodies
-	S.drawBodies();
+	if( drawBodies ) { S.drawBodies(); }
 	if( S.T.numGenerations > maxGen ) {
 		maxGen = S.T.numGenerations;
 	}
-	console.log( maxGen );
+	console.log( maxGen , maxRecDepth );
 	
 
 	
