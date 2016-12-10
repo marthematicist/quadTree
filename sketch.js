@@ -535,8 +535,8 @@ function draw() {
 	console.log( maxGen , maxRecDepth );
 }
 
-function mouseClicked() {
-	divColor = color(255 , 0 , 0 , 255 );
+function mousePressed() {
+	divColor = color(255 , 255 , 0 , 255 );
 	if( reversePhysics ) {
 		reversePhysics = false; 
 	} else { 
