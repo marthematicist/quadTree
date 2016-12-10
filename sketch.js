@@ -34,7 +34,7 @@ function setupGlobalVariables() {
 	// SIMULATION VARIABLES
 	{
 		// number of bodies
-		numBodies = 50;
+		numBodies = 100;
 		// simulation area
 		simArea = 100;
 		// linear conversion factor: sim to window
@@ -58,7 +58,7 @@ function setupGlobalVariables() {
 		// probability of negative particle
 		negProb = 0.5;
 		// PHYSICS CONSTANTS
-		reversePhysics = false;
+		reversePhysics = true;
 		dt = 1.0 / ( 200 );
 		edgeSpringConstant = 1000;
 		frictionConstant = 0.1;
