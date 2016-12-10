@@ -12,21 +12,22 @@ function setupGlobalVariables() {
 	// DRAW VARIABLES
 	{
 		// general draw variables
-		bgColor = color( 0 , 0 , 0 , 255 );
+		bgColor = color( 0 , 0 , 0 , 2 );
 		// tree draw variables
 		drawTreeFill = true;
 		drawTreeDiv = true;
-		divColor = color( 128 , 128 , 128 , 255 );
+		divColor = color( 128 , 128 , 128 , 64 );
 		treeFillColor = color( 128 , 128 , 128 , 64 );
 		divWeight = 0.5
 		// body draw variables
-		drawBodies = true;
+		drawBodies = false;
 		bodyDiam = 5;
-		bodyColor = color( 255 , 255 , 255 , 255 );
-		fillAlpha = 40;
+		bodyAlpha = 50;
+		bodyColor = color( 255 , 255 , 255 , bodyAlpha );
+		fillAlpha = 3;
 		baseFillColor = color( 0 , 200 , 255 , fillAlpha );
-		minLerpAmt = 0.4;
-		maxLerpAmt = 0.4;
+		minLerpAmt = 0.0;
+		maxLerpAmt = 0.8;
 		randomColor = true;
 	}
 	
@@ -55,7 +56,7 @@ function setupGlobalVariables() {
 		minMass = 0.1;
 		maxMass = 5;
 		// probability of negative particle
-		negProb = 0.0;
+		negProb = 0.5;
 		// PHYSICS CONSTANTS
 		reversePhysics = false;
 		dt = 1.0 / ( 200 );
@@ -94,21 +95,22 @@ var Body = function() {
 	if( random(0,1) < negProb ) { this.p = -1; } else { this.p = 1; }
 	// treeLoc = location in QuadTree: array of integers
 	this.treeLoc = [];
-	
-	// method to draw the body to the screen
-	this.draw = function() {
-		if( this.m > 0 ) {
-			fill( bodyColor );
-			var c = sim2WinVect( this.x );
-			ellipse( c.x , c.y , bodyDiam , bodyDiam );
-		}
-	}
-	
 	if( randomColor ) {
 		var rc = color( random(0,255) , random(0,255) , random(0,255) , fillAlpha );
 		var la = random( minLerpAmt , maxLerpAmt );
 		this.c = lerpColor( baseFillColor , rc , la );
 	};
+	
+	// method to draw the body to the screen
+	this.draw = function() {
+		if( this.m > 0 ) {
+			fill( 255-red(this.c) , 255-blue(this.c) , 255-green(this.c) , bodyAlpha );
+			var c = sim2WinVect( this.x );
+			ellipse( c.x , c.y , bodyDiam , bodyDiam );
+		}
+	}
+	
+	
 };
 
 // function to create a new QuadTree object
@@ -509,11 +511,13 @@ function draw() {
 		S.B[0].p = -1;
 	}
 	
+	/*
 	if( mouseIsPressed ) {
 		reversePhysics = true;
 	} else {
 		reversePhysics = false;
 	}
+	* */
 	
 	// evolve the simulation full steps
 	S.evolveFullStep(1);
@@ -528,10 +532,13 @@ function draw() {
 		maxGen = S.T.numGenerations;
 	}
 	console.log( maxGen , maxRecDepth );
-	
-
-	
 }
 
+function touchStarted() {
+	reversePhysics = false;
+}
+function touchEnded() {
+	reversePhysics = true;
+}
 
 
