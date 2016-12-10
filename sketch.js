@@ -20,7 +20,7 @@ function setupGlobalVariables() {
 		treeFillColor = color( 128 , 128 , 128 , 64 );
 		divWeight = 0.5
 		// body draw variables
-		drawBodies = false;
+		drawBodies = true;
 		bodyDiam = 5;
 		bodyAlpha = 50;
 		bodyColor = color( 255 , 255 , 255 , bodyAlpha );
