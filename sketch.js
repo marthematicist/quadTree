@@ -47,8 +47,9 @@ function setupGlobalVariables() {
 		minMass = 0.1;
 		maxMass = 5;
 		// probability of negative particle
-		negProb = 0.2;
+		negProb = 0.0;
 		// PHYSICS CONSTANTS
+		reversePhysics = false;
 		dt = 1.0 / ( 200 );
 		edgeSpringConstant = 1000;
 		frictionConstant = 0.1;
@@ -107,7 +108,9 @@ var QuadTree = function( center , halfDimX , halfDimY ) {
 	this.halfDimX = halfDimX;
 	this.halfDimY = halfDimY;
 	this.children = new Array(4);
+	this.parent = 0;
 	this.body = 0;
+	this.numGenerations = 0;
 	
 	// method to determine which child a body belongs in
 	// returns integer: NE = 0 , NW = 1 , SW = 2 , SE = 3
@@ -134,17 +137,32 @@ var QuadTree = function( center , halfDimX , halfDimY ) {
 		var c0 = createVector( this.center.x + 0.5*this.halfDimX ,
 							   this.center.y + 0.5*this.halfDimY );
 		this.children[0] = new QuadTree( c0 , 0.5*halfDimX , 0.5*halfDimY );
+		this.children[0].parent = this;
 		var c1 = createVector( this.center.x - 0.5*this.halfDimX ,
 							   this.center.y + 0.5*this.halfDimY );
 		this.children[1] = new QuadTree( c1 , 0.5*halfDimX , 0.5*halfDimY );
+		this.children[1].parent = this;
 		var c2 = createVector( this.center.x - 0.5*this.halfDimX ,
 							   this.center.y - 0.5*this.halfDimY );
 		this.children[2] = new QuadTree( c2 , 0.5*halfDimX , 0.5*halfDimY );
+		this.children[2].parent = this;
 		var c3 = createVector( this.center.x + 0.5*this.halfDimX ,
 							   this.center.y - 0.5*this.halfDimY );
 		this.children[3] = new QuadTree( c3 , 0.5*halfDimX , 0.5*halfDimY );
+		this.children[3].parent = this;
 		this.hasChildren = true;
+		
+		this.changeParentNumGenerations( 1 );
 	}
+	
+	// method to increment parent generation counts
+	this.changeParentNumGenerations = function( a ) {
+		//console.log( this.numGenerations );
+		this.numGenerations += a;
+		if( !this.isRoot ) {
+			this.parent.changeParentNumGenerations( a );
+		}
+	};
 	
 	// method to add a body to a tree (recursive)
 	this.addBody = function( b ) {
@@ -287,7 +305,9 @@ var BodySim = function( num ) {
 				var mj = this.B[j].m;
 				var mi = this.B[i].m;
 				// find the final change in acceleration
-				if( this.B[i].p * this.B[j].p > 0 ) {
+				var rev = 1;
+				if( reversePhysics ) { rev = -1; }
+				if( this.B[i].p * this.B[j].p * rev < 0 ) {
 					// if charges are different, repel
 					dAi.mult( f * abs(mj) );
 					dAj.mult( -f * abs(mi) );
@@ -393,6 +413,8 @@ function setup() {
 	S = new BodySim( numBodies );
 	// evolve the simulation 1/2 step
 	S.evolveHalfStep();
+	
+	maxGen = 0;
 }
 
 function draw() {
@@ -400,12 +422,19 @@ function draw() {
 	background( bgColor );
 	
 	// set one body under mouse
-	if( true ) {
+	if( false ) {
 		S.B[0].v = createVector( 0 , 0 );
 		S.B[0].a = createVector( 0 , 0 );
 		S.B[0].m = 50*maxMass;
 		S.B[0].x = createVector( xMin + win2SimFactor*mouseX , 
 								 yMin + win2SimFactor*mouseY );
+		S.B[0].p = -1;
+	}
+	
+	if( mouseIsPressed ) {
+		reversePhysics = true;
+	} else {
+		reversePhysics = false;
 	}
 	
 	// evolve the simulation full steps
@@ -415,8 +444,11 @@ function draw() {
 	S.drawTree( true , true );
 	
 	// draw bodies
-	//S.drawBodies();
-	
+	S.drawBodies();
+	if( S.T.numGenerations > maxGen ) {
+		maxGen = S.T.numGenerations;
+	}
+	console.log( maxGen );
 	
 
 	
