@@ -45,6 +45,7 @@ function setupGlobalVariables() {
 		// dimensions of the simulation
 		xExt = xRes * win2SimFactor;
 		yExt = yRes * win2SimFactor;
+		minExt = min( xExt , yExt );
 		// bounds of simulation
 		xMin = -0.5*xExt;
 		yMin = -0.5*yExt;
@@ -57,9 +58,9 @@ function setupGlobalVariables() {
 		minMass = 0.1;
 		maxMass = 5;
 		// probability of negative particle
-		negProb = 0.5;
+		negProb = 0.1;
 		// PHYSICS CONSTANTS
-		reversePhysics = false;
+		reversePhysics = true;
 		dt = 1.0 / ( 200 );
 		edgeSpringConstant = 1000;
 		frictionConstant = 0.1;
@@ -83,7 +84,9 @@ function sim2WinVect( a ) {
 // CLASS Body
 var Body = function() {
 	// x = position (randomized)
-	this.x = createVector( random( xMin , xMax ) , random( yMin , yMax ) );
+	// this.x = createVector( random( xMin , xMax ) , random( yMin , yMax ) );
+	this.x = p5.Vector.random2D();
+	this.x.mult( random( 0.3*minExt , 0.3*minExt ) );
 	// v = velocity
 	this.v = createVector( 0 , 0 );
 	// a = acceleration
