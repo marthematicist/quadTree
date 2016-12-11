@@ -469,16 +469,16 @@ var BodySim = function( num ) {
 	
 	// method to draw the QuadTree divisions and color the populated children
 	this.drawTree = function( fillOn , divOn ) {
-		if( fillOn ) {
-			// fill the tree
-			noStroke();
-			this.T.fillChildren();
-		}
 		if( divOn ) {
 			// draw the divisions
 			stroke( divColor );
 			strokeWeight( divWeight );
 			this.T.drawDiv();
+		}
+		if( fillOn ) {
+			// fill the tree
+			noStroke();
+			this.T.fillChildren();
 		}
 	};
 	
