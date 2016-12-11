@@ -1,7 +1,7 @@
 function setupGlobalVariables() {
 	
 	// version number
-	versionNumber = '0.24';
+	versionNumber = '0.26';
 	// CANVAS VARIABLES
 	{
 		// set canvas size to fill the window
@@ -28,7 +28,7 @@ function setupGlobalVariables() {
 	// SIMULATION VARIABLES
 	{
 		// number of bodies
-		numBodies = 40;
+		numBodies = 50;
 		// simulation area
 		simArea = 100;
 		// linear conversion factor: sim to window
@@ -48,7 +48,7 @@ function setupGlobalVariables() {
 		simCenter = createVector( 0.5*( xMin + xMax ) , 0.5*( yMin + yMax ) );
 		// body mass variables
 		totalMass = 400;
-		massDev = 0.0;
+		massDev = 0.5;
 		avgMass = totalMass/numBodies;
 		minMass = (1-massDev)*avgMass;
 		maxMass = (1+massDev)*avgMass;
@@ -84,9 +84,9 @@ function setupGlobalVariables() {
 		divWeight = 0.5
 		// body draw variables
 		drawBodies = true;
-		bodyDiam = minRes*0.007;
-		bodyAlpha = 172;
-		bodyColor = color( 200 , 200 , 200 , bodyAlpha );
+		bodyDiam = minRes*0.006;
+		bodyAlpha = 128;
+		bodyColor = color( 255 , 255 , 255 , bodyAlpha );
 		fillAlpha = 4;
 		baseFillColor = color( 0 , 200 , 255 , fillAlpha );
 		minLerpAmt = 0.0;
@@ -142,7 +142,7 @@ var Body = function() {
 	this.draw = function() {
 		if( this.m > 0 ) {
 			//fill( 255-red(this.c) , 255-blue(this.c) , 255-green(this.c) , bodyAlpha );
-			fill( 255 , 255 , 255 , bodyAlpha );
+			fill( bodyColor );
 			var c = sim2WinVect( this.x );
 			ellipse( c.x , c.y , bodyDiam , bodyDiam );
 		}
