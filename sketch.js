@@ -1,7 +1,7 @@
 function setupGlobalVariables() {
 	
 	// version number
-	versionNumber = '0.17';
+	versionNumber = '0.21';
 	// CANVAS VARIABLES
 	{
 		// set canvas size to fill the window
@@ -19,13 +19,15 @@ function setupGlobalVariables() {
 		// tree draw variables
 		drawTreeFill = true;
 		drawTreeDiv = true;
+		drawCOM = true;
 		divColor = color( 128 , 128 , 128 , 128 );
 		treeFillColor = color( 128 , 128 , 128 , 64 );
+		comColor = color( 255 , 255 , 0 , 1 );
 		divWeight = 0.5
 		// body draw variables
 		drawBodies = true;
-		bodyDiam = 2;
-		bodyAlpha = 128;
+		bodyDiam = minRes*0.007;
+		bodyAlpha = 172;
 		bodyColor = color( 255 , 255 , 255 , bodyAlpha );
 		fillAlpha = 4;
 		baseFillColor = color( 0 , 200 , 255 , fillAlpha );
@@ -40,7 +42,7 @@ function setupGlobalVariables() {
 		frameTimer = millis();
 		clickTimer = millis();
 		doubleClickTime = 400;
-		startWaitTime = 4000;
+		startWaitTime = 2000;
 		clearFirstTime = true;
 		modeChangeTimer = millis();
 		modeChangeDisplayTime = 2000;
@@ -50,7 +52,7 @@ function setupGlobalVariables() {
 	// SIMULATION VARIABLES
 	{
 		// number of bodies
-		numBodies = 100;
+		numBodies = 40;
 		// simulation area
 		simArea = 100;
 		// linear conversion factor: sim to window
@@ -69,24 +71,34 @@ function setupGlobalVariables() {
 		// simulation center (vector)
 		simCenter = createVector( 0.5*( xMin + xMax ) , 0.5*( yMin + yMax ) );
 		// body mass variables
-		minMass = 0.1;
-		maxMass = 5;
-		avgMass = 0.5*( minMass + maxMass );
+		totalMass = 400;
+		massDev = 0.0;
+		avgMass = totalMass/numBodies;
+		minMass = (1-massDev)*avgMass;
+		maxMass = (1+massDev)*avgMass;
 		// probability of negative particle
 		negProb = 0.0;
 		// PHYSICS CONSTANTS
 		reversePhysics = false;
 		dt = 1.0 / ( 400 );
-		edgeSpringConstant = 0.5;
-		frictionConstant = 0.05;
+		edgeSpringConstant = 1;
+		frictionConstant = 0.005;
 		universalConstant = 1;
-		epsilon = 0.3;
+		epsilon = 0.4;
 		// ratio for Barnes-Hut tree method
-		theta = 5;
+		theta = 0.3; //0.4 opt
 		bruteMethod = false;
 		// max recursion depth
 		maxDepth = 17;
 		maxRecDepth = 0;
+	}
+	
+	// RECORD-KEEPING VARIABLES
+	{
+		directCalcCount = 0;
+		treeCalcCount = 0;
+		bodiesRemoved = 0;
+		avgFrameTime = 0;
 	}
 }
 
@@ -132,8 +144,6 @@ var Body = function() {
 			ellipse( c.x , c.y , bodyDiam , bodyDiam );
 		}
 	}
-	
-	
 };
 
 // function to create a new QuadTree object
@@ -324,30 +334,33 @@ var QuadTree = function( center , halfDimX , halfDimY ) {
 	this.getResultantAcc = function( b ) {
 		var x1 = createVector( b.x.x , b.x.y );
 		var m1 = b.m;
-		var a = createVector( 0 , 0 );
-		var d = p5.Vector.dist( x1 , this.com );
+		this.a = createVector( 0 , 0 );
+		var d = 0;
 		//console.log(this.com);
 		// if tree has children, check if it is distant enough
 		if( this.hasChildren ) {
+			d = p5.Vector.dist( x1 , this.com );
 			// if it is distant enough
-			if( d / this.halfDimMin > theta ) {
+			if( this.halfDimMin / d < theta ) {
 				// compute acceleration based on center of mass
 				x2 = createVector( this.com.x , this.com.y );
 				m2 = this.totalMass;
-				a = p5.Vector.sub( x1 , x2 );
-				a.normalize();
+				this.a = p5.Vector.sub( x1 , x2 );
+				this.a.normalize();
 				var fm = universalConstant / pow( d * d + epsilon * epsilon , 1.5 );
-				a.mult( fm * m2 );
-				return a;
+				this.a.mult( fm * m2 );
+				treeCalcCount++;
+				//console.log( "tree:  " + a );
+				return this.a;
 			}
 			// if it is not distant enough
 			else {
 				// get accelerations from children
-				a.add( this.children[0].getResultantAcc( b ) );
-				a.add( this.children[1].getResultantAcc( b ) );
-				a.add( this.children[2].getResultantAcc( b ) );
-				a.add( this.children[3].getResultantAcc( b ) );
-				return a;
+				this.a.add( this.children[0].getResultantAcc( b ) );
+				this.a.add( this.children[1].getResultantAcc( b ) );
+				this.a.add( this.children[2].getResultantAcc( b ) );
+				this.a.add( this.children[3].getResultantAcc( b ) );
+				return this.a;
 			}
 		}
 		// if tree has no children
@@ -356,20 +369,33 @@ var QuadTree = function( center , halfDimX , halfDimY ) {
 			if( this.hasBody ) {
 				x2 = createVector( this.body.x.x , this.body.x.y );
 				m2 = this.body.m;
-				a = p5.Vector.sub( x1 , x2 );
-				
-				a.normalize();
-				
+				d = p5.Vector.dist( x1 , x2 );
+				this.a = p5.Vector.sub( x1 , x2 );
+				this.a.normalize();
 				var fm = universalConstant / pow( d * d + epsilon * epsilon , 1.5 );
-				
-				a.mult( fm * m2 );
-				//console.log(d ,fm , m2 , a);
-				return a;
+				this.a.mult( fm * m2 );
+				directCalcCount++;
+				//onsole.log( "direct:  " + a );
+				return this.a;
 			}
 			// if tree does not have a body, return zero vector
 			else {
-				return a;
+				return createVector( 0 , 0 );
 			}
+		}
+	};
+	
+	// method to draw centers of mass
+	this.drawCentersOfMass = function() {
+		fill( comColor );
+		noStroke();
+		var x = sim2WinVect( this.com );
+		ellipse( x.x , x.y , this.totalMass , this.totalMass );
+		if( this.hasChildren ) {
+			this.children[0].drawCentersOfMass();
+			this.children[1].drawCentersOfMass();
+			this.children[2].drawCentersOfMass();
+			this.children[3].drawCentersOfMass();
 		}
 	};
 	
@@ -570,6 +596,9 @@ var BodySim = function( num ) {
 				this.B[i].x.add( p5.Vector.mult( this.B[i].v , dt ) );
 			}
 			this.zeroAccelerations();
+			this.updateTree();
+			this.T.updateCenters();
+			this.removeZeroMasses;
 			if( bruteMethod ) {
 				this.applyMutualForcesBrute();
 			} else {			
@@ -590,6 +619,7 @@ var BodySim = function( num ) {
 			if( this.B[i].m === 0 ) {
 				append( ind,  i );
 				console.log( "removed a body!" );
+				bodiesRemoved++;
 			}
 		}
 		this.N -= ind.length;
@@ -627,13 +657,17 @@ function setup() {
 	text( "[Double-click(tap) to reverse physics]\nversion " + versionNumber , 0.5*xRes , 0.3*yRes + 190 );
 	textSize( 20 );
 	text( "N=" + numBodies + "   fieldd dimensions=" + round(xExt*100)*0.01 + "x" + round(yExt*100)*0.01 + 
-		  "   avgMass=" + avgMass  + "\nG=" + universalConstant + "   epsilon=" + epsilon + "   theta=" + 1/theta + 
+		  "   avgMass=" + avgMass  + "\nG=" + universalConstant + "   epsilon=" + epsilon + "   theta=" + theta + 
 		  "   frictionCoeff=" + frictionConstant + "   dt=" + dt  , 0.5*xRes , yRes - 40 );
 	
 	
 }
 
 function draw() {
+	// record keeping
+	directCalcCount = 0;
+	treeCalcCount = 0;
+	
 	// if still in setup, don't draw anything
 	if( millis() < startWaitTime ) {
 		return
@@ -658,21 +692,16 @@ function draw() {
 		S.B[0].p = -1;
 	}
 	
-	/*
-	if( mouseIsPressed ) {
-		reversePhysics = true;
-	} else {
-		reversePhysics = false;
-	}
-	* */
-	
+
 	// evolve the simulation full steps
 	S.evolveFullStep(1);
-	S.updateTree();
-	S.T.updateCenters();
-	S.removeZeroMasses();
+	
+	// draw centers of mass
+	if( drawCOM ) { S.T.drawCentersOfMass(); }
+	
 	// draw QuadTree
 	S.drawTree( drawTreeFill , drawTreeDiv );
+	
 	
 	// draw bodies
 	if( drawBodies ) { S.drawBodies(); }
@@ -695,18 +724,17 @@ function draw() {
 			}
 		}
 	}
-			
-			
-	
-	
-	if( S.T.numGenerations > maxGen ) {
-		maxGen = S.T.numGenerations;
+
+	avgFrameTime = avgFrameTime*0.8 + (millis() - frameTimer)*0.2;
+	if( frameCount%20 === 0 ) {
+		console.log( "theta:" + theta +
+					 "   direct calc:" + directCalcCount + 
+					 "   treeCalc:" +  treeCalcCount + 
+					 "   totalCalc:" + (directCalcCount+treeCalcCount) + 
+					 "   bodiesRemoved:" + bodiesRemoved +
+					 "   avgFrameTime:" + avgFrameTime );
 	}
-	//console.log( maxGen , maxRecDepth );
-	//console.log( millis() - frameTimer );
 	frameTimer = millis();
-	
-	
 }
 
 function mousePressed() {
