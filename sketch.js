@@ -39,9 +39,11 @@ function setupGlobalVariables() {
 	{
 		frameTimer = millis();
 		clickTimer = millis();
-		doubleClickTime = 500;
+		doubleClickTime = 400;
 		startWaitTime = 4000;
 		clearFirstTime = true;
+		modeChangeTimer = millis();
+		modeChangeDisplayTime = 3000;
 		
 	}
 	
@@ -635,6 +637,7 @@ function draw() {
 	if( clearFirstTime ) {
 		background( 0 , 0 , 0 );
 		clearFirstTime = false;
+		modeChangeTimer = millis();
 	}
 	
 	
@@ -669,17 +672,42 @@ function draw() {
 	
 	// draw bodies
 	if( drawBodies ) { S.drawBodies(); }
+	
+	// if mode changed recently, display mode
+	if( millis() - modeChangeTimer < modeChangeDisplayTime ) {
+		fill( 0 , 0 , 0 );
+		noStroke();
+		textAlign( CENTER );
+		textSize( 30 );
+		var textWidth = 390;
+		var textHeight = 40;
+		rect( 0.5*xRes - 0.5*textWidth , yRes - 60 , textWidth , textHeight , 10 );
+		fill( 255 );
+		if( !reversePhysics ) {
+			text( "physics mode: ATTRACT" , 0.5*xRes , yRes - 30 );
+		} else {
+			text( "physics mode: REPEL" , 0.5*xRes , yRes - 30 );
+		}
+		
+	}
+			
+			
+	
+	
 	if( S.T.numGenerations > maxGen ) {
 		maxGen = S.T.numGenerations;
 	}
 	//console.log( maxGen , maxRecDepth );
 	//console.log( millis() - frameTimer );
 	frameTimer = millis();
+	
+	
 }
 
 function mousePressed() {
 	if( millis() - clickTimer < doubleClickTime ) {
 		reversePhysics = !reversePhysics;
+		modeChangeTimer = millis();
 	}
 	clickTimer = millis();
 }
