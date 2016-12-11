@@ -69,9 +69,9 @@ function setupGlobalVariables() {
 		// simulation center (vector)
 		simCenter = createVector( 0.5*( xMin + xMax ) , 0.5*( yMin + yMax ) );
 		// body mass variables
-		avgMass = 1;
 		minMass = 0.1;
 		maxMass = 5;
+		avgMass = 0.5*( minMass + maxMass );
 		// probability of negative particle
 		negProb = 0.0;
 		// PHYSICS CONSTANTS
@@ -80,7 +80,7 @@ function setupGlobalVariables() {
 		edgeSpringConstant = 0.8;
 		frictionConstant = 0.05;
 		universalConstant = 1;
-		epsilon = min(xExt,yExt)*0.05;
+		epsilon = 0.3;
 		// ratio for Barnes-Hut tree method
 		theta = 5;
 		bruteMethod = false;
@@ -623,9 +623,9 @@ function setup() {
 	text("N-BODY QUADTREE\n-marthematicist-" , 0.5*xRes , 0.5*yRes - 80 );
 	textSize( 35 );
 	text( "A physics simulation utilizing the Barnes-Hut algorithm.\nDouble-click(tap) to reverse physics\nversion " + versionNumber , 0.5*xRes , 0.5*yRes + 80 );
-	textSize( 15 );
+	textSize( 20 );
 	text( "N=" + numBodies + "   field dimensions=" + round(xExt*100)*0.01 + "x" + round(yExt*100)*0.01 + 
-		  " (area: " + (xExt*yExt) + ")\nepsilon=" + epsilon + "   theta=" + 1/theta , 0.5*xRes , yRes - 30 );
+		  "   avg.mass=" + avgMass  + "\nG=" + universalConstant + "   epsilon=" + epsilon + "   theta=" + 1/theta + "   dt=" + dt  , 0.5*xRes , yRes - 40 );
 	
 	
 }
@@ -676,20 +676,21 @@ function draw() {
 	
 	// if mode changed recently, display mode
 	if( millis() - modeChangeTimer < modeChangeDisplayTime ) {
-		fill( 0 , 0 , 0 );
+		fill( 0 , 0 , 0 , 64 );
 		noStroke();
 		textAlign( CENTER );
 		textSize( 30 );
 		var textWidth = 390;
 		var textHeight = 40;
 		rect( 0.5*xRes - 0.5*textWidth , yRes - 60 , textWidth , textHeight , 10 );
-		fill( 255 );
-		if( !reversePhysics ) {
-			text( "physics mode: ATTRACT" , 0.5*xRes , yRes - 30 );
-		} else {
-			text( "physics mode: REPEL" , 0.5*xRes , yRes - 30 );
+		fill( 255 , 255 , 255 , 128 );
+		if( millis() - modeChangeTimer < modeChangeDisplayTime*0.9 ) {
+			if( !reversePhysics ) {
+				text( "physics mode: ATTRACT" , 0.5*xRes , yRes - 30 );
+			} else {
+				text( "physics mode: REPEL" , 0.5*xRes , yRes - 30 );
+			}
 		}
-		
 	}
 			
 			
