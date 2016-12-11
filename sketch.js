@@ -648,9 +648,9 @@ function draw() {
 function mousePressed() {
 	//divColor = color(255 , 255 , 0 , 255 );
 	if( reversePhysics ) {
-		reversePhysics = true; 
-	} else { 
 		reversePhysics = false; 
+	} else { 
+		reversePhysics = true; 
 	}
 }
 
