@@ -1,7 +1,7 @@
 function setupGlobalVariables() {
 	
 	// version number
-	versionNumber = '0.29';
+	versionNumber = '0.30';
 	// CANVAS VARIABLES
 	{
 		// set canvas size to fill the window
