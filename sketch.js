@@ -35,7 +35,7 @@ function setupGlobalVariables() {
 	// SIMULATION VARIABLES
 	{
 		// number of bodies
-		numBodies = 80;
+		numBodies = 100;
 		// simulation area
 		simArea = 100;
 		// linear conversion factor: sim to window
@@ -58,7 +58,7 @@ function setupGlobalVariables() {
 		minMass = 0.1;
 		maxMass = 5;
 		// probability of negative particle
-		negProb = 0.1;
+		negProb = 0.0;
 		// PHYSICS CONSTANTS
 		reversePhysics = true;
 		dt = 1.0 / ( 200 );
@@ -66,6 +66,9 @@ function setupGlobalVariables() {
 		frictionConstant = 0.1;
 		universalConstant = 1;
 		epsilon = min(xExt,yExt)*0.1;
+		// ratio for Barnes-Hut tree method
+		theta = 5;
+		bruteMethod = false;
 		// max recursion depth
 		maxDepth = 15;
 		maxRecDepth = 0;
@@ -133,11 +136,14 @@ var QuadTree = function( center , halfDimX , halfDimY ) {
 	this.center = center;
 	this.halfDimX = halfDimX;
 	this.halfDimY = halfDimY;
+	this.halfDimMin = min(halfDimX , halfDimY);
 	this.children = new Array(4);
 	this.parent = 0;
 	this.body = 0;
 	this.numGenerations = 0;
 	this.depth = 0;
+	this.com = 0;
+	this.totalMass = 0;
 	
 	// method to determine which child a body belongs in
 	// returns integer: NE = 0 , NW = 1 , SW = 2 , SE = 3
@@ -256,6 +262,101 @@ var QuadTree = function( center , halfDimX , halfDimY ) {
 			}
 		}
 	}
+	
+	// method to update center of mass and total mass for tree
+	this.updateCenters = function() {
+		// if there are children, call function on children,
+		// then use children's center of mass to find own COM
+		if( this.hasChildren ) {
+			this.children[0].updateCenters();
+			this.children[1].updateCenters();
+			this.children[2].updateCenters();
+			this.children[3].updateCenters();
+			this.totalMass = this.children[0].totalMass +
+							 this.children[1].totalMass +
+							 this.children[2].totalMass +
+							 this.children[3].totalMass ;
+			var c0 = createVector( this.children[0].com.x , this.children[0].com.y );
+			var c1 = createVector( this.children[1].com.x , this.children[1].com.y );
+			var c2 = createVector( this.children[2].com.x , this.children[2].com.y );
+			var c3 = createVector( this.children[3].com.x , this.children[3].com.y );
+			c0.mult( this.children[0].totalMass );
+			c1.mult( this.children[1].totalMass );
+			c2.mult( this.children[2].totalMass );
+			c3.mult( this.children[3].totalMass );
+			c0.add( c1 );
+			c0.add( c2 );
+			c0.add( c3 );
+			c0.mult( 1 / this.totalMass );
+			this.com = createVector( c0.x , c0.y );
+		}
+		// if there are no children
+		else {
+			// if there is a body, set com to its values
+			if( this.hasBody ) {
+				this.com = createVector( this.body.x.x , this.body.x.y );
+				this.totalMass = this.body.m;
+			}
+			// if not body or children, com is center of tree, and mass = 0
+			else {
+				this.com = createVector( this.center.x , this.center.y );
+				this.totalMass = 0;
+			}
+		}
+	};
+	
+	// method to get resultant acceleration on a body (b) from tree
+	this.getResultantAcc = function( b ) {
+		var x1 = createVector( b.x.x , b.x.y );
+		var m1 = b.m;
+		var a = createVector( 0 , 0 );
+		var d = p5.Vector.dist( x1 , this.com );
+		//console.log(this.com);
+		// if tree has children, check if it is distant enough
+		if( this.hasChildren ) {
+			// if it is distant enough
+			if( d / this.halfDimMin > theta ) {
+				// compute acceleration based on center of mass
+				x2 = createVector( this.com.x , this.com.y );
+				m2 = this.totalMass;
+				a = p5.Vector.sub( x1 , x2 );
+				a.normalize();
+				var fm = universalConstant / pow( d * d + epsilon * epsilon , 1.5 );
+				a.mult( fm * m2 );
+				return a;
+			}
+			// if it is not distant enough
+			else {
+				// get accelerations from children
+				a.add( this.children[0].getResultantAcc( b ) );
+				a.add( this.children[1].getResultantAcc( b ) );
+				a.add( this.children[2].getResultantAcc( b ) );
+				a.add( this.children[3].getResultantAcc( b ) );
+				return a;
+			}
+		}
+		// if tree has no children
+		else {
+			// if tree has a body, compute acc based on it
+			if( this.hasBody ) {
+				x2 = createVector( this.body.x.x , this.body.x.y );
+				m2 = this.body.m;
+				a = p5.Vector.sub( x1 , x2 );
+				
+				a.normalize();
+				
+				var fm = universalConstant / pow( d * d + epsilon * epsilon , 1.5 );
+				
+				a.mult( fm * m2 );
+				//console.log(d ,fm , m2 , a);
+				return a;
+			}
+			// if tree does not have a body, return zero vector
+			else {
+				return a;
+			}
+		}
+	};
 	
 	// method to draw divisions
 	this.drawDiv = function() {
@@ -390,6 +491,19 @@ var BodySim = function( num ) {
 		}
 	};
 	
+	// method to apply mutual forces to all bodies (TREE)
+	this.applyMutualForcesTree = function() {
+		// do for each body
+		for( var i = 0 ; i < this.N ; i++ ) {
+			// get resulting acceleration from tree
+			if( reversePhysics ) {
+				this.B[i].a.add( this.T.getResultantAcc( this.B[i] ) );
+			} else {
+				this.B[i].a.sub( this.T.getResultantAcc( this.B[i] ) );
+			}
+		}
+	};
+	
 	// method to apply edge forces
 	this.applyEdgeForces = function() {
 		for( var i = 0 ; i < this.N ; i++ ) {
@@ -412,38 +526,21 @@ var BodySim = function( num ) {
 				this.B[i].x.y = yMax;
 				this.B[i].v.y = -abs( this.B[i].v.y );
 			}
-			/*
-			var m = abs(this.B[i].m);
-			var f;
-			var dA;
-			if( x < xMin ) {
-				f = edgeSpringConstant * ( xMin - x );
-				dA = createVector( f / m , 0 );
-				this.B[i].a.add( dA );
-			}
-			if( y < yMin ) {
-				f = edgeSpringConstant * ( yMin - y );
-				dA = createVector( 0, f / m );
-				this.B[i].a.add( dA );
-			}
-			if( x > xMax ) {
-				f = edgeSpringConstant * ( x - ( xMax ) );
-				dA = createVector( -f / m , 0 );
-				this.B[i].a.add( dA );
-			}
-			if( y > yMax ) {
-				f = edgeSpringConstant * ( y - ( yMax ) );
-				dA = createVector( 0 , -f / m );
-				this.B[i].a.add( dA );
-			}
-			* */
 		}
 	};
 	
 	// method to evolve the simulation 1/2 step 
 	this.evolveHalfStep = function() {
+		
 		this.zeroAccelerations();
-		this.applyMutualForcesBrute();
+		this.updateTree();
+		this.T.updateCenters();
+		this.removeZeroMasses;
+		if( bruteMethod ) {
+			this.applyMutualForcesBrute();
+		} else {			
+			this.applyMutualForcesTree();
+		}
 		this.applyEdgeForces();
 		this.applyFrictionForces();
 		for( var i = 0 ; i < this.N ; i++ ) {
@@ -458,7 +555,11 @@ var BodySim = function( num ) {
 				this.B[i].x.add( p5.Vector.mult( this.B[i].v , dt ) );
 			}
 			this.zeroAccelerations();
-			this.applyMutualForcesBrute();
+			if( bruteMethod ) {
+				this.applyMutualForcesBrute();
+			} else {			
+				this.applyMutualForcesTree();
+			}
 			this.applyEdgeForces();
 			this.applyFrictionForces();
 			for( var i = 0 ; i < this.N ; i++ ) {
@@ -500,6 +601,8 @@ function setup() {
 	maxRecDepth = 0;
 	
 	background( 0 , 0 , 0 );
+	
+	
 }
 
 function draw() {
@@ -527,6 +630,7 @@ function draw() {
 	// evolve the simulation full steps
 	S.evolveFullStep(1);
 	S.updateTree();
+	S.T.updateCenters();
 	S.removeZeroMasses();
 	// draw QuadTree
 	S.drawTree( drawTreeFill , drawTreeDiv );
