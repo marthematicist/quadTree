@@ -641,7 +641,7 @@ function draw() {
 		maxGen = S.T.numGenerations;
 	}
 	//console.log( maxGen , maxRecDepth );
-	console.log( millis() - frameTimer );
+	//console.log( millis() - frameTimer );
 	frameTimer = millis();
 }
 
