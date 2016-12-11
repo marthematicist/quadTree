@@ -43,7 +43,7 @@ function setupGlobalVariables() {
 		startWaitTime = 4000;
 		clearFirstTime = true;
 		modeChangeTimer = millis();
-		modeChangeDisplayTime = 3000;
+		modeChangeDisplayTime = 2000;
 		
 	}
 	
@@ -624,7 +624,8 @@ function setup() {
 	textSize( 35 );
 	text( "A physics simulation utilizing the Barnes-Hut algorithm.\nDouble-click(tap) to reverse physics\nversion " + versionNumber , 0.5*xRes , 0.5*yRes + 80 );
 	textSize( 15 );
-	text( "N=" + numBodies + "   field dimensions=" + round(xExt*100)*0.01 + "x" + round(yExt*100)*0.01 + " = " + (xExt*yExt) , 0.5*xRes , yRes - 20 );
+	text( "N=" + numBodies + "   field dimensions=" + round(xExt*100)*0.01 + "x" + round(yExt*100)*0.01 + 
+		  " (area: " + (xExt*yExt) + ")\nepsilon=" + epsilon + "   theta=" + 1/theta , 0.5*xRes , yRes - 30 );
 	
 	
 }
