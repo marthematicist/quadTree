@@ -622,9 +622,9 @@ function setup() {
 	fill(255);
 	text("N-BODY QUADTREE\n-marthematicist-" , 0.5*xRes , 0.3*yRes - 80 );
 	textSize( 35 );
-	text( "A particle physics simulation\nutilizing the Barnes-Hut algorithm." , 0.5*xRes , 0.3*yRes + 60 );
+	text( "A particle physics simulation\nutilizing the Barnes-Hut algorithm." , 0.5*xRes , 0.3*yRes + 80 );
 	textSize( 27 );
-	text( "[Double-click(tap) to reverse physics]\nversion " + versionNumber , 0.5*xRes , 0.3*yRes + 150 );
+	text( "[Double-click(tap) to reverse physics]\nversion " + versionNumber , 0.5*xRes , 0.3*yRes + 190 );
 	textSize( 20 );
 	text( "N=" + numBodies + "   field dimensions=" + round(xExt*100)*0.01 + "x" + round(yExt*100)*0.01 + 
 		  "   avg.mass=" + avgMass  + "\nG=" + universalConstant + "   epsilon=" + epsilon + "   theta=" + 1/theta + "   dt=" + dt  , 0.5*xRes , yRes - 40 );
