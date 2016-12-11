@@ -1,7 +1,7 @@
 function setupGlobalVariables() {
 	
 	// version number
-	versionNumber = '0.21';
+	versionNumber = '0.22';
 	// CANVAS VARIABLES
 	{
 		// set canvas size to fill the window
@@ -42,7 +42,8 @@ function setupGlobalVariables() {
 		frameTimer = millis();
 		clickTimer = millis();
 		doubleClickTime = 400;
-		startWaitTime = 2000;
+		startTimer = 0;
+		startWaitTime = 4000;
 		clearFirstTime = true;
 		modeChangeTimer = millis();
 		modeChangeDisplayTime = 2000;
@@ -660,7 +661,7 @@ function setup() {
 		  "   avgMass=" + avgMass  + "\nG=" + universalConstant + "   epsilon=" + epsilon + "   theta=" + theta + 
 		  "   frictionCoeff=" + frictionConstant + "   dt=" + dt  , 0.5*xRes , yRes - 40 );
 	
-	
+	startTimer = millis();
 }
 
 function draw() {
@@ -669,7 +670,7 @@ function draw() {
 	treeCalcCount = 0;
 	
 	// if still in setup, don't draw anything
-	if( millis() < startWaitTime ) {
+	if( millis() - startTimer < startWaitTime ) {
 		return
 	}
 	if( clearFirstTime ) {
