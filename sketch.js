@@ -1,7 +1,7 @@
 function setupGlobalVariables() {
 	
 	// version number
-	versionNumber = '0.23';
+	versionNumber = '0.24';
 	// CANVAS VARIABLES
 	{
 		// set canvas size to fill the window
@@ -11,32 +11,7 @@ function setupGlobalVariables() {
 		minRes = min( xRes , yRes );
 		maxRes = max( xRes , yRes );
 	}
-	
-	// DRAW VARIABLES
-	{
-		// general draw variables
-		bgColor = color( 0 , 0 , 0 , 10  );
-		// tree draw variables
-		drawTreeFill = true;
-		drawTreeDiv = true;
-		drawCOM = true;
-		divColor = color( 128 , 128 , 128 , 128 );
-		treeFillColor = color( 128 , 128 , 128 , 64 );
-		comColor = color( 255 , 255 , 0 , 1 );
-		divWeight = 0.5
-		// body draw variables
-		drawBodies = true;
-		bodyDiam = minRes*0.007;
-		bodyAlpha = 172;
-		bodyColor = color( 200 , 200 , 200 , bodyAlpha );
-		fillAlpha = 4;
-		baseFillColor = color( 0 , 200 , 255 , fillAlpha );
-		minLerpAmt = 0.0;
-		maxLerpAmt = 0.8;
-		randomColor = true;
-		
-	}
-	
+
 	// TIMING VARIABLES
 	{
 		frameTimer = millis();
@@ -94,12 +69,39 @@ function setupGlobalVariables() {
 		maxRecDepth = 0;
 	}
 	
+	// DRAW VARIABLES
+	{
+		// general draw variables
+		bgColor = color( 0 , 0 , 0 , 10  );
+		// tree draw variables
+		drawTreeFill = true;
+		drawTreeDiv = true;
+		drawCOM = true;
+		comDrawThreshold = 2*avgMass;
+		divColor = color( 128 , 128 , 128 , 128 );
+		treeFillColor = color( 128 , 128 , 128 , 64 );
+		comColor = color( 255 , 255 , 0 , 1 );
+		divWeight = 0.5
+		// body draw variables
+		drawBodies = true;
+		bodyDiam = minRes*0.007;
+		bodyAlpha = 172;
+		bodyColor = color( 200 , 200 , 200 , bodyAlpha );
+		fillAlpha = 4;
+		baseFillColor = color( 0 , 200 , 255 , fillAlpha );
+		minLerpAmt = 0.0;
+		maxLerpAmt = 0.8;
+		randomColor = true;
+		
+	}
+	
 	// RECORD-KEEPING VARIABLES
 	{
 		directCalcCount = 0;
 		treeCalcCount = 0;
 		bodiesRemoved = 0;
 		avgFrameTime = 0;
+		comDrawn = 0;
 	}
 }
 
@@ -388,15 +390,18 @@ var QuadTree = function( center , halfDimX , halfDimY ) {
 	
 	// method to draw centers of mass
 	this.drawCentersOfMass = function() {
-		fill( comColor );
-		noStroke();
-		var x = sim2WinVect( this.com );
-		ellipse( x.x , x.y , this.totalMass , this.totalMass );
-		if( this.hasChildren ) {
-			this.children[0].drawCentersOfMass();
-			this.children[1].drawCentersOfMass();
-			this.children[2].drawCentersOfMass();
-			this.children[3].drawCentersOfMass();
+		if( this.totalMass > comDrawThreshold ) {
+			fill( comColor );
+			noStroke();
+			var x = sim2WinVect( this.com );
+			ellipse( x.x , x.y , this.totalMass , this.totalMass );
+			comDrawn++;
+			if( this.hasChildren ) {
+				this.children[0].drawCentersOfMass();
+				this.children[1].drawCentersOfMass();
+				this.children[2].drawCentersOfMass();
+				this.children[3].drawCentersOfMass();
+			}
 		}
 	};
 	
@@ -659,7 +664,7 @@ function setup() {
 	textSize( 20 );
 	text( "N=" + numBodies + "   fieldd dimensions=" + round(xExt*100)*0.01 + "x" + round(yExt*100)*0.01 + 
 		  "   avgMass=" + avgMass  + "\nG=" + universalConstant + "   epsilon=" + epsilon + "   theta=" + theta + 
-		  "   frictionCoeff=" + frictionConstant + "   dt=" + dt  , 0.5*xRes , yRes - 40 );
+		  "   frictionCoeff=" + frictionConstant + "   dt=" + dt   , 0.5*xRes , yRes - 40 );
 	
 	startTimer = millis();
 }
@@ -698,7 +703,9 @@ function draw() {
 	S.evolveFullStep(1);
 	
 	// draw centers of mass
-	if( drawCOM ) { S.T.drawCentersOfMass(); }
+	if( drawCOM ) { 
+		comDrawn = 0;
+		S.T.drawCentersOfMass(); }
 	
 	// draw QuadTree
 	S.drawTree( drawTreeFill , drawTreeDiv );
@@ -733,7 +740,8 @@ function draw() {
 					 "   treeCalc:" +  treeCalcCount + 
 					 "   totalCalc:" + (directCalcCount+treeCalcCount) + 
 					 "   bodiesRemoved:" + bodiesRemoved +
-					 "   avgFrameTime:" + avgFrameTime );
+					 "   avgFrameTime:" + avgFrameTime +
+					 "   comDrawn=" + comDrawn);
 	}
 	frameTimer = millis();
 }
