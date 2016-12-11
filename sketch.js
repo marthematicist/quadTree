@@ -1,7 +1,7 @@
 function setupGlobalVariables() {
 	
 	// version number
-	versionNumber = '0.22';
+	versionNumber = '0.23';
 	// CANVAS VARIABLES
 	{
 		// set canvas size to fill the window
@@ -28,7 +28,7 @@ function setupGlobalVariables() {
 		drawBodies = true;
 		bodyDiam = minRes*0.007;
 		bodyAlpha = 172;
-		bodyColor = color( 255 , 255 , 255 , bodyAlpha );
+		bodyColor = color( 200 , 200 , 200 , bodyAlpha );
 		fillAlpha = 4;
 		baseFillColor = color( 0 , 200 , 255 , fillAlpha );
 		minLerpAmt = 0.0;
