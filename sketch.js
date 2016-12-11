@@ -87,9 +87,9 @@ function sim2WinVect( a ) {
 // CLASS Body
 var Body = function() {
 	// x = position (randomized)
-	// this.x = createVector( random( xMin , xMax ) , random( yMin , yMax ) );
-	this.x = p5.Vector.random2D();
-	this.x.mult( random( 0.4*minExt , 0.5*minExt ) );
+	this.x = createVector( random( xMin , xMax ) , random( yMin , yMax ) );
+	// this.x = p5.Vector.random2D();
+	// this.x.mult( random( 0.4*minExt , 0.5*minExt ) );
 	// v = velocity
 	this.v = createVector( 0 , 0 );
 	// a = acceleration
