@@ -25,7 +25,7 @@ function setupGlobalVariables() {
 		bodyAlpha = 30;
 		bodyColor = color( 255 , 255 , 255 , bodyAlpha );
 		fillAlpha = 3;
-		baseFillColor = color( 0 , 200 , 255 , fillAlpha );
+		baseFillColor = color( 200 , 0 , 255 , fillAlpha );
 		minLerpAmt = 0.0;
 		maxLerpAmt = 0.8;
 		randomColor = true;
