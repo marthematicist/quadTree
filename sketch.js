@@ -1,7 +1,7 @@
 function setupGlobalVariables() {
 	
 	// version number
-	versionNumber = '0.27';
+	versionNumber = '0.29';
 	// CANVAS VARIABLES
 	{
 		// set canvas size to fill the window
@@ -97,6 +97,7 @@ function setupGlobalVariables() {
 	
 	// RECORD-KEEPING VARIABLES
 	{
+		overallMass = 0;
 		directCalcCount = 0;
 		treeCalcCount = 0;
 		bodiesRemoved = 0;
@@ -394,7 +395,10 @@ var QuadTree = function( center , halfDimX , halfDimY ) {
 			fill( comColor );
 			noStroke();
 			var x = sim2WinVect( this.com );
-			ellipse( x.x , x.y , this.totalMass , this.totalMass );
+			//if( this.totalMass < overallMass*1.1 ) {
+			if( true ) {
+				ellipse( x.x , x.y , this.totalMass , this.totalMass );
+			}
 			comDrawn++;
 			if( this.hasChildren ) {
 				this.children[0].drawCentersOfMass();
@@ -451,6 +455,8 @@ var BodySim = function( num ) {
 		this.B[i] = new Body();
 		this.T.addBody( this.B[i] );
 	}
+	this.T.updateCenters();
+	overallMass = this.T.totalMass;
 	
 	
 	// method to draw the bodies
@@ -665,7 +671,7 @@ function setup() {
 	text( "version " + versionNumber , 0.5*xRes , yRes - 100 );
 	textSize( 20 );
 	text( "N=" + numBodies + "   fieldd dimensions=" + round(xExt*100)*0.01 + "x" + round(yExt*100)*0.01 + 
-		  "   avgMass=" + avgMass  + "\nG=" + universalConstant + "   epsilon=" + epsilon + "   theta=" + theta + 
+		  "   avgMass=" + round(overallMass/numBodies*100)*0.01  + "\nG=" + universalConstant + "   epsilon=" + epsilon + "   theta=" + theta + 
 		  "   frictionCoeff=" + frictionConstant + "   dt=" + dt   , 0.5*xRes , yRes - 60 );
 	
 	startTimer = millis();
