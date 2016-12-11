@@ -1,4 +1,7 @@
 function setupGlobalVariables() {
+	
+	// version number
+	versionNumber = '0.12';
 	// CANVAS VARIABLES
 	{
 		// set canvas size to fill the window
@@ -29,7 +32,17 @@ function setupGlobalVariables() {
 		minLerpAmt = 0.0;
 		maxLerpAmt = 0.8;
 		randomColor = true;
+		
+	}
+	
+	// TIMING VARIABLES
+	{
 		frameTimer = millis();
+		clickTimer = millis();
+		doubleClickTime = 500;
+		startWaitTime = 4000;
+		clearFirstTime = true;
+		
 	}
 	
 	// SIMULATION VARIABLES
@@ -600,12 +613,29 @@ function setup() {
 	maxGen = 0;
 	maxRecDepth = 0;
 	
+	// display beginning text
 	background( 0 , 0 , 0 );
+	textAlign( CENTER );
+	textSize( 20 );
+	fill(255);
+	text("N-BODY QUADTREE\n-marthematicist-" , 0.5*xRes , 0.5*yRes );
+	textSize( 15 );
+	text( "A physics simulation utilizing the Barnes-Hut algorithm.\nDouble-click(tap) to reverse physics\nversion " + versionNumber , 0.5*xRes , 0.5*yRes + 80 );
 	
 	
 }
 
 function draw() {
+	// if still in setup, don't draw anything
+	if( millis() < startWaitTime ) {
+		return
+	}
+	if( clearFirstTime ) {
+		background( 0 , 0 , 0 );
+		clearFirstTime = false;
+	}
+	
+	
 	// draw background
 	background( bgColor );
 	
@@ -646,12 +676,10 @@ function draw() {
 }
 
 function mousePressed() {
-	//divColor = color(255 , 255 , 0 , 255 );
-	if( reversePhysics ) {
-		reversePhysics = false; 
-	} else { 
-		reversePhysics = true; 
+	if( millis() - clickTimer < doubleClickTime ) {
+		reversePhysics = !reversePhysics;
 	}
+	clickTimer = millis();
 }
 
 
