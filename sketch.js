@@ -1,7 +1,7 @@
 function setupGlobalVariables() {
 	
 	// version number
-	versionNumber = '0.12';
+	versionNumber = '0.17';
 	// CANVAS VARIABLES
 	{
 		// set canvas size to fill the window
@@ -77,7 +77,7 @@ function setupGlobalVariables() {
 		// PHYSICS CONSTANTS
 		reversePhysics = false;
 		dt = 1.0 / ( 400 );
-		edgeSpringConstant = 0.8;
+		edgeSpringConstant = 0.5;
 		frictionConstant = 0.05;
 		universalConstant = 1;
 		epsilon = 0.3;
@@ -626,8 +626,9 @@ function setup() {
 	textSize( 27 );
 	text( "[Double-click(tap) to reverse physics]\nversion " + versionNumber , 0.5*xRes , 0.3*yRes + 190 );
 	textSize( 20 );
-	text( "N=" + numBodies + "   field dimensions=" + round(xExt*100)*0.01 + "x" + round(yExt*100)*0.01 + 
-		  "   avg.mass=" + avgMass  + "\nG=" + universalConstant + "   epsilon=" + epsilon + "   theta=" + 1/theta + "   dt=" + dt  , 0.5*xRes , yRes - 40 );
+	text( "N=" + numBodies + "   fieldd dimensions=" + round(xExt*100)*0.01 + "x" + round(yExt*100)*0.01 + 
+		  "   avgMass=" + avgMass  + "\nG=" + universalConstant + "   epsilon=" + epsilon + "   theta=" + 1/theta + 
+		  "   frictionCoeff=" + frictionConstant + "   dt=" + dt  , 0.5*xRes , yRes - 40 );
 	
 	
 }
