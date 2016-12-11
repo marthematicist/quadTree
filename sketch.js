@@ -12,7 +12,7 @@ function setupGlobalVariables() {
 	// DRAW VARIABLES
 	{
 		// general draw variables
-		bgColor = color( 0 , 0 , 0 , 2 );
+		bgColor = color( 0 , 0 , 0 , 10  );
 		// tree draw variables
 		drawTreeFill = true;
 		drawTreeDiv = true;
@@ -22,9 +22,9 @@ function setupGlobalVariables() {
 		// body draw variables
 		drawBodies = true;
 		bodyDiam = 2;
-		bodyAlpha = 30;
+		bodyAlpha = 128;
 		bodyColor = color( 255 , 255 , 255 , bodyAlpha );
-		fillAlpha = 3;
+		fillAlpha = 4;
 		baseFillColor = color( 0 , 200 , 255 , fillAlpha );
 		minLerpAmt = 0.0;
 		maxLerpAmt = 0.8;
@@ -61,16 +61,16 @@ function setupGlobalVariables() {
 		negProb = 0.0;
 		// PHYSICS CONSTANTS
 		reversePhysics = false;
-		dt = 1.0 / ( 200 );
+		dt = 1.0 / ( 400 );
 		edgeSpringConstant = 1000;
 		frictionConstant = 0.1;
 		universalConstant = 1;
-		epsilon = min(xExt,yExt)*0.1;
+		epsilon = min(xExt,yExt)*0.05;
 		// ratio for Barnes-Hut tree method
 		theta = 5;
 		bruteMethod = false;
 		// max recursion depth
-		maxDepth = 18;
+		maxDepth = 17;
 		maxRecDepth = 0;
 	}
 }
@@ -89,7 +89,7 @@ var Body = function() {
 	// x = position (randomized)
 	this.x = createVector( random( xMin , xMax ) , random( yMin , yMax ) );
 	// this.x = p5.Vector.random2D();
-	// this.x.mult( random( 0.4*minExt , 0.5*minExt ) );
+	// this.x.mult( random( 0.3*minExt , 0.3*minExt ) );
 	// v = velocity
 	this.v = createVector( 0 , 0 );
 	// a = acceleration
@@ -574,7 +574,7 @@ var BodySim = function( num ) {
 		for( var i = 0 ; i < this.N ; i++ ) {
 			if( this.B[i].m === 0 ) {
 				append( ind,  i );
-				//console.log( "removed a body!" );
+				console.log( "removed a body!" );
 			}
 		}
 		this.N -= ind.length;
