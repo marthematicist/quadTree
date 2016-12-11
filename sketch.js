@@ -1,7 +1,7 @@
 function setupGlobalVariables() {
 	
 	// version number
-	versionNumber = '0.26';
+	versionNumber = '0.27';
 	// CANVAS VARIABLES
 	{
 		// set canvas size to fill the window
@@ -657,14 +657,16 @@ function setup() {
 	textSize( 50 );
 	fill(255);
 	text("N-BODY QUADTREE\n-marthematicist-" , 0.5*xRes , 0.3*yRes - 80 );
-	textSize( 35 );
-	text( "A particle physics simulation\nutilizing the Barnes-Hut algorithm." , 0.5*xRes , 0.3*yRes + 80 );
-	textSize( 27 );
-	text( "[Double-click(tap) to reverse physics]\nversion " + versionNumber , 0.5*xRes , 0.3*yRes + 190 );
+	textSize( 25 );
+	text( "A particle physics simulation\nutilizing the Barnes-Hut algorithm." , 0.5*xRes , 0.3*yRes + 70 );
+	textSize( 40 );
+	text( "[Double-click(tap) to reverse physics]" , 0.5*xRes , 0.3*yRes + 190 );
+	textSize( 30 );
+	text( "version " + versionNumber , 0.5*xRes , yRes - 100 );
 	textSize( 20 );
 	text( "N=" + numBodies + "   fieldd dimensions=" + round(xExt*100)*0.01 + "x" + round(yExt*100)*0.01 + 
 		  "   avgMass=" + avgMass  + "\nG=" + universalConstant + "   epsilon=" + epsilon + "   theta=" + theta + 
-		  "   frictionCoeff=" + frictionConstant + "   dt=" + dt   , 0.5*xRes , yRes - 40 );
+		  "   frictionCoeff=" + frictionConstant + "   dt=" + dt   , 0.5*xRes , yRes - 60 );
 	
 	startTimer = millis();
 }
