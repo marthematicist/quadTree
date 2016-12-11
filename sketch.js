@@ -25,7 +25,7 @@ function setupGlobalVariables() {
 		bodyAlpha = 30;
 		bodyColor = color( 255 , 255 , 255 , bodyAlpha );
 		fillAlpha = 3;
-		baseFillColor = color( 200 , 0 , 255 , fillAlpha );
+		baseFillColor = color( 0 , 200 , 255 , fillAlpha );
 		minLerpAmt = 0.0;
 		maxLerpAmt = 0.8;
 		randomColor = true;
@@ -60,7 +60,7 @@ function setupGlobalVariables() {
 		// probability of negative particle
 		negProb = 0.0;
 		// PHYSICS CONSTANTS
-		reversePhysics = true;
+		reversePhysics = false;
 		dt = 1.0 / ( 200 );
 		edgeSpringConstant = 1000;
 		frictionConstant = 0.1;
@@ -648,9 +648,9 @@ function draw() {
 function mousePressed() {
 	//divColor = color(255 , 255 , 0 , 255 );
 	if( reversePhysics ) {
-		reversePhysics = false; 
-	} else { 
 		reversePhysics = true; 
+	} else { 
+		reversePhysics = false; 
 	}
 }
 
