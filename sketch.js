@@ -75,8 +75,8 @@ function setupGlobalVariables() {
 		// PHYSICS CONSTANTS
 		reversePhysics = false;
 		dt = 1.0 / ( 400 );
-		edgeSpringConstant = 1000;
-		frictionConstant = 0.1;
+		edgeSpringConstant = 0.8;
+		frictionConstant = 0.05;
 		universalConstant = 1;
 		epsilon = min(xExt,yExt)*0.05;
 		// ratio for Barnes-Hut tree method
@@ -525,19 +525,19 @@ var BodySim = function( num ) {
 
 			if( this.B[i].x.x < xMin ) {
 				this.B[i].x.x = xMin;
-				this.B[i].v.x = abs( this.B[i].v.x );
+				this.B[i].v.x = abs( this.B[i].v.x * edgeSpringConstant );
 			}
 			if( this.B[i].x.y < yMin ) {
 				this.B[i].x.y = yMin;
-				this.B[i].v.y = abs( this.B[i].v.y );
+				this.B[i].v.y = abs( this.B[i].v.y * edgeSpringConstant );
 			}
 			if( this.B[i].x.x > xMax ) {
 				this.B[i].x.x = xMax;
-				this.B[i].v.x = -abs( this.B[i].v.x );
+				this.B[i].v.x = -abs( this.B[i].v.x * edgeSpringConstant );
 			}
 			if( this.B[i].x.y > yMax ) {
 				this.B[i].x.y = yMax;
-				this.B[i].v.y = -abs( this.B[i].v.y );
+				this.B[i].v.y = -abs( this.B[i].v.y * edgeSpringConstant );
 			}
 		}
 	};
@@ -616,11 +616,13 @@ function setup() {
 	// display beginning text
 	background( 0 , 0 , 0 );
 	textAlign( CENTER );
-	textSize( 20 );
+	textSize( 50 );
 	fill(255);
-	text("N-BODY QUADTREE\n-marthematicist-" , 0.5*xRes , 0.5*yRes );
-	textSize( 15 );
+	text("N-BODY QUADTREE\n-marthematicist-" , 0.5*xRes , 0.5*yRes - 80 );
+	textSize( 35 );
 	text( "A physics simulation utilizing the Barnes-Hut algorithm.\nDouble-click(tap) to reverse physics\nversion " + versionNumber , 0.5*xRes , 0.5*yRes + 80 );
+	textSize( 15 );
+	text( "N=" + numBodies + "   field dimensions=" + round(xExt*100)*0.01 + "x" + round(yExt*100)*0.01 + " = " + (xExt*yExt) , 0.5*xRes , yRes - 20 );
 	
 	
 }
