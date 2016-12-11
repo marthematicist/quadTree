@@ -89,7 +89,7 @@ var Body = function() {
 	// x = position (randomized)
 	// this.x = createVector( random( xMin , xMax ) , random( yMin , yMax ) );
 	this.x = p5.Vector.random2D();
-	this.x.mult( random( 0.3*minExt , 0.3*minExt ) );
+	this.x.mult( random( 0.4*minExt , 0.5*minExt ) );
 	// v = velocity
 	this.v = createVector( 0 , 0 );
 	// a = acceleration
