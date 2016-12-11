@@ -70,7 +70,7 @@ function setupGlobalVariables() {
 		theta = 5;
 		bruteMethod = false;
 		// max recursion depth
-		maxDepth = 15;
+		maxDepth = 18;
 		maxRecDepth = 0;
 	}
 }
