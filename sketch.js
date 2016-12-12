@@ -1,7 +1,7 @@
 function setupGlobalVariables() {
 	
 	// version number
-	versionNumber = '0.32';
+	versionNumber = '0.37';
 	// CANVAS VARIABLES
 	{
 		// set canvas size to fill the window
@@ -58,11 +58,12 @@ function setupGlobalVariables() {
 		reversePhysics = false;
 		dt = 1.0 / ( 400 );
 		edgeSpringConstant = 1;
-		frictionConstant = 0.005;
+		frictionConstantAttract = 0.005;
+		frictionConstantRepel = 0.05;
 		universalConstant = 1;
 		epsilon = 0.4;
 		// ratio for Barnes-Hut tree method
-		theta = 0.3; //0.4 opt
+		theta = 0.3; //0.3 opt
 		bruteMethod = false;
 		// max recursion depth
 		maxDepth = 17;
@@ -81,7 +82,7 @@ function setupGlobalVariables() {
 		divColor = color( 128 , 128 , 128 , 128 );
 		treeFillColor = color( 128 , 128 , 128 , 64 );
 		comColor = color( 255 , 255 , 0 , 1 );
-		divWeight = 1;
+		divWeight = 0.5
 		// body draw variables
 		drawBodies = true;
 		bodyDiam = minRes*0.006;
@@ -502,7 +503,11 @@ var BodySim = function( num ) {
 	this.applyFrictionForces = function() {
 		for( var i = 0 ; i < this.N ; i++ ) {
 			dA = createVector( this.B[i].v.x , this.B[i].v.y );
-			dA.mult( -frictionConstant*dA.mag() );
+			if( !reversePhysics ) {
+				dA.mult( -frictionConstantAttract*dA.mag() );
+			} else {
+				dA.mult( -frictionConstantRepel*dA.mag() );
+			}
 			this.B[i].a.add( dA );
 		}
 	};
@@ -670,9 +675,9 @@ function setup() {
 	textSize( 30 );
 	text( "version " + versionNumber , 0.5*xRes , yRes - 100 );
 	textSize( 20 );
-	text( "N=" + numBodies + "   fieldd dimensions=" + round(xExt*100)*0.01 + "x" + round(yExt*100)*0.01 + 
+	text( "N=" + numBodies + "   field dimensions=" + round(xExt*100)*0.01 + "x" + round(yExt*100)*0.01 + 
 		  "   avgMass=" + round(overallMass/numBodies*100)*0.01  + "\nG=" + universalConstant + "   epsilon=" + epsilon + "   theta=" + theta + 
-		  "   frictionCoeff=" + frictionConstant + "   dt=" + dt   , 0.5*xRes , yRes - 60 );
+		  "   dt=" + dt   , 0.5*xRes , yRes - 60 );
 	
 	startTimer = millis();
 }
