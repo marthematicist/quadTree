@@ -1,7 +1,7 @@
 function setupGlobalVariables() {
 	
 	// version number
-	versionNumber = '0.375';
+	versionNumber = '0.38';
 	// CANVAS VARIABLES
 	{
 		// set canvas size to fill the window
@@ -57,13 +57,18 @@ function setupGlobalVariables() {
 		// PHYSICS CONSTANTS
 		reversePhysics = false;
 		dt = 1.0 / ( 400 );
+		// Edge velocity dampening
 		edgeSpringConstant = 1;
+		// Friction coefficients
 		frictionConstantAttract = 0.005;
-		frictionConstantRepel = 0.05;
+		frictionConstantRepel = 0.1;
+		// Gravity constant
 		universalConstant = 1;
+		// gravity smoothing factor (0.4 optimum)
 		epsilon = 0.4;
-		// ratio for Barnes-Hut tree method
-		theta = 0.3; //0.3 opt
+		// ratio for Barnes-Hut tree method (0.3 optimum)
+		theta = 0.3;
+		// mutual force comuptation algorithm: Brute or tree (Barnes-Hut)
 		bruteMethod = false;
 		// max recursion depth
 		maxDepth = 17;
