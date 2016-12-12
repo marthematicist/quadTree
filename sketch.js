@@ -1,7 +1,7 @@
 function setupGlobalVariables() {
 	
 	// version number
-	versionNumber = '0.30';
+	versionNumber = '0.31';
 	// CANVAS VARIABLES
 	{
 		// set canvas size to fill the window
@@ -81,7 +81,7 @@ function setupGlobalVariables() {
 		divColor = color( 128 , 128 , 128 , 128 );
 		treeFillColor = color( 128 , 128 , 128 , 64 );
 		comColor = color( 255 , 255 , 0 , 1 );
-		divWeight = 0.5
+		divWeight = 1;
 		// body draw variables
 		drawBodies = true;
 		bodyDiam = minRes*0.006;
@@ -469,16 +469,16 @@ var BodySim = function( num ) {
 	
 	// method to draw the QuadTree divisions and color the populated children
 	this.drawTree = function( fillOn , divOn ) {
+		if( fillOn ) {
+			// fill the tree
+			noStroke();
+			this.T.fillChildren();
+		}
 		if( divOn ) {
 			// draw the divisions
 			stroke( divColor );
 			strokeWeight( divWeight );
 			this.T.drawDiv();
-		}
-		if( fillOn ) {
-			// fill the tree
-			noStroke();
-			this.T.fillChildren();
 		}
 	};
 	
