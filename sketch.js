@@ -1,7 +1,7 @@
 function setupGlobalVariables() {
 	
 	// version number
-	versionNumber = '0.38';
+	versionNumber = '0.41';
 	// CANVAS VARIABLES
 	{
 		// set canvas size to fill the window
@@ -21,7 +21,7 @@ function setupGlobalVariables() {
 		startWaitTime = 4000;
 		clearFirstTime = true;
 		modeChangeTimer = millis();
-		modeChangeDisplayTime = 2000;
+		modeChangeDisplayTime = 4000;
 		
 	}
 	
@@ -55,7 +55,7 @@ function setupGlobalVariables() {
 		// probability of negative particle
 		negProb = 0.0;
 		// PHYSICS CONSTANTS
-		reversePhysics = false;
+		reversePhysics = true;
 		dt = 1.0 / ( 400 );
 		// Edge velocity dampening
 		edgeSpringConstant = 1;
@@ -77,19 +77,23 @@ function setupGlobalVariables() {
 	
 	// DRAW VARIABLES
 	{
+		// artMode - bodies not displayed
+		artMode = false;
 		// general draw variables
 		bgColor = color( 0 , 0 , 0 , 10  );
 		// tree draw variables
 		drawTreeFill = true;
 		drawTreeDiv = true;
 		drawCOM = true;
-		comDrawThreshold = 2*avgMass;
-		divColor = color( 128 , 128 , 128 , 128 );
+		comDrawThreshold = 4*avgMass;
+		comSizeFactor = 2;
+		divColor = color( 100 , 100 , 100 , 32 );
 		treeFillColor = color( 128 , 128 , 128 , 64 );
 		comColor = color( 255 , 255 , 0 , 1 );
-		divWeight = 0.5
+		divWeight = 1;
 		// body draw variables
-		drawBodies = true;
+		if( artMode ) {	drawBodies = false; }
+		else { drawBodies = true; }
 		bodyDiam = minRes*0.006;
 		bodyAlpha = 128;
 		bodyColor = color( 255 , 255 , 255 , bodyAlpha );
@@ -124,9 +128,9 @@ function sim2WinVect( a ) {
 // CLASS Body
 var Body = function() {
 	// x = position (randomized)
-	this.x = createVector( random( xMin , xMax ) , random( yMin , yMax ) );
-	// this.x = p5.Vector.random2D();
-	// this.x.mult( random( 0.3*minExt , 0.3*minExt ) );
+	// this.x = createVector( random( xMin , xMax ) , random( yMin , yMax ) );
+	this.x = p5.Vector.random2D();
+	this.x.mult( random( 0 , 0.3*minExt ) );
 	// v = velocity
 	this.v = createVector( 0 , 0 );
 	// a = acceleration
@@ -403,7 +407,8 @@ var QuadTree = function( center , halfDimX , halfDimY ) {
 			var x = sim2WinVect( this.com );
 			//if( this.totalMass < overallMass*1.1 ) {
 			if( true ) {
-				ellipse( x.x , x.y , this.totalMass , this.totalMass );
+				var d = comSizeFactor*sqrt( sim2Win( this.totalMass ) );
+				ellipse( x.x , x.y , d , d );
 			}
 			comDrawn++;
 			if( this.hasChildren ) {
@@ -421,6 +426,7 @@ var QuadTree = function( center , halfDimX , halfDimY ) {
 			var c = sim2WinVect( this.center );
 			var hdx = sim2Win( this.halfDimX );
 			var hdy = sim2Win( this.halfDimY );
+			stroke( divColor );
 			line( c.x - hdx , c.y , c.x + hdx , c.y );
 			line( c.x , c.y - hdy , c.x , c.y + hdy );
 			this.children[0].drawDiv();
@@ -674,16 +680,21 @@ function setup() {
 	fill(255);
 	text("N-BODY QUADTREE\n-marthematicist-" , 0.5*xRes , 0.3*yRes - 80 );
 	textSize( 25 );
-	text( "A particle physics simulation\nutilizing the Barnes-Hut algorithm." , 0.5*xRes , 0.3*yRes + 70 );
+	if( !artMode ) {
+		text( "A particle physics simulation\nutilizing the Barnes-Hut algorithm." , 0.5*xRes , 0.3*yRes + 70 );
+	}
 	textSize( 40 );
 	text( "[Double-click(tap) to reverse physics]" , 0.5*xRes , 0.3*yRes + 190 );
 	textSize( 30 );
 	text( "version " + versionNumber , 0.5*xRes , yRes - 100 );
 	textSize( 20 );
-	text( "N=" + numBodies + "   field dimensions=" + round(xExt*100)*0.01 + "x" + round(yExt*100)*0.01 + 
-		  "   avgMass=" + round(overallMass/numBodies*100)*0.01  + "\nG=" + universalConstant + "   epsilon=" + epsilon + "   theta=" + theta + 
-		  "   dt=" + dt   , 0.5*xRes , yRes - 60 );
-	
+	if( artMode ) {
+		text( "artMode" , 0.5*xRes , yRes - 60 );
+	} else {
+		text( "N=" + numBodies + "   field dimensions=" + round(xExt*100)*0.01 + "x" + round(yExt*100)*0.01 + 
+			  "   avgMass=" + round(overallMass/numBodies*100)*0.01  + "\nG=" + universalConstant + "   epsilon=" + epsilon + "   theta=" + theta + 
+			  "   dt=" + dt   , 0.5*xRes , yRes - 60 );
+	}
 	startTimer = millis();
 }
 
@@ -738,15 +749,15 @@ function draw() {
 		noStroke();
 		textAlign( CENTER );
 		textSize( 30 );
-		var textWidth = 390;
-		var textHeight = 40;
-		rect( 0.5*xRes - 0.5*textWidth , yRes - 60 , textWidth , textHeight , 10 );
+		var textWidth = 450;
+		var textHeight = 80;
+		rect( 0.5*xRes - 0.5*textWidth , yRes - 90 , textWidth , textHeight , 10 );
 		fill( 255 , 255 , 255 , 128 );
-		if( millis() - modeChangeTimer < modeChangeDisplayTime*0.9 ) {
+		if( millis() - modeChangeTimer < modeChangeDisplayTime*0.95 ) {
 			if( !reversePhysics ) {
-				text( "physics mode: ATTRACT" , 0.5*xRes , yRes - 30 );
+				text( "physics mode: ATTRACT\n[double-click/tap to reverse]" , 0.5*xRes , yRes - 60 );
 			} else {
-				text( "physics mode: REPEL" , 0.5*xRes , yRes - 30 );
+				text( "physics mode: REPEL\n[double-click/tap to reverse]" , 0.5*xRes , yRes - 60 );
 			}
 		}
 	}
