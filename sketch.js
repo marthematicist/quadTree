@@ -1,7 +1,7 @@
 function setupGlobalVariables() {
 	
 	// version number
-	versionNumber = '0.51';
+	versionNumber = '0.53';
 	// CANVAS VARIABLES
 	{
 		// set canvas size to fill the window
@@ -99,7 +99,7 @@ function setupGlobalVariables() {
 		bodyColor = color( 255 , 255 , 255 , bodyAlpha );
 		fillAlpha = 6;
 		baseFillColor = color( 0 , 196 , 255 , fillAlpha );
-		minLerpAmt = 0.0;
+		minLerpAmt = 0.2;
 		maxLerpAmt = 0.8;
 		randomColor = true;
 		
