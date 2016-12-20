@@ -1,7 +1,7 @@
 function setupGlobalVariables() {
 	
 	// version number
-	versionNumber = '0.55';
+	versionNumber = '0.57';
 	// CANVAS VARIABLES
 	{
 		// set canvas size to fill the window
@@ -28,7 +28,7 @@ function setupGlobalVariables() {
 	// SIMULATION VARIABLES
 	{
 		// number of bodies
-		numBodies = 96;
+		numBodies = 60;
 		// simulation area
 		simArea = 100;
 		// linear conversion factor: sim to window
@@ -55,13 +55,13 @@ function setupGlobalVariables() {
 		// probability of negative particle
 		negProb = 0.0;
 		// PHYSICS CONSTANTS
-		reversePhysics = true;
+		reversePhysics = false;
 		dt = 1.0 / ( 400 );
 		// Edge velocity dampening
 		edgeSpringConstant = 1;
 		// Friction coefficients
-		frictionConstantAttract = 0.005;
-		frictionConstantRepel = 0.1;
+		frictionConstantAttract = 0.001;
+		frictionConstantRepel = 0.2;
 		// Gravity constant
 		universalConstant = 1;
 		// gravity smoothing factor (0.4 optimum)
@@ -84,7 +84,7 @@ function setupGlobalVariables() {
 		// tree draw variables
 		drawTreeFill = true;
 		drawTreeDiv = true;
-		drawCOM = true;
+		drawCOM = false;
 		comDrawThreshold = 3.5*avgMass;
 		comSizeFactor = 1;
 		divColor = color( 192 , 192 , 192 , 64 );
@@ -99,7 +99,7 @@ function setupGlobalVariables() {
 		bodyColor = color( 255 , 255 , 255 , bodyAlpha );
 		fillAlpha = 6;
 		baseFillColor = color( 0 , 196 , 255 , fillAlpha );
-		minLerpAmt = 0.2;
+		minLerpAmt = 0.5;
 		maxLerpAmt = 0.8;
 		randomColor = true;
 		
@@ -119,20 +119,32 @@ function setupGlobalVariables() {
 // functions to convert linear distance and vectors from sim to window
 function sim2Win( a ) {
 	return a*sim2WinFactor;
-};
+}
 function sim2WinVect( a ) {
 	return createVector( (a.x - xMin)*sim2WinFactor ,
 						 (a.y - yMin)*sim2WinFactor );
-};
+}
 
 // CLASS Body
 var Body = function() {
-	// x = position (randomized)
-	// this.x = createVector( random( xMin , xMax ) , random( yMin , yMax ) );
-	this.x = p5.Vector.random2D();
-	this.x.mult( random( 0 , 0.1*minExt ) );
-	// v = velocity
-	this.v = createVector( 0 , 0 );
+	var type = 3;
+  // set initial position and velocity
+  if( type === 1) {
+    this.x = createVector( random( xMin , xMax ) , random( yMin , yMax ) );
+    this.v = createVector( 0 , 0 );
+  }
+  if( type === 2) {
+    this.x = p5.Vector.random2D();
+    this.x.mult( random( 0 , 0.1*minExt ) );
+    this.v = createVector( 0 , 0 );
+  }
+  if( type === 3) {
+    this.x = p5.Vector.random2D();
+    this.v = createVector( this.x.y , -this.x.x );
+    this.x.mult( random( 0.23*minExt , 0.35*minExt ) );
+    var d = this.x.mag();
+    this.v.mult( 2.0 * d );
+  }
 	// a = acceleration
 	this.a = createVector( 0 , 0 );
 	// m = mass
@@ -147,7 +159,9 @@ var Body = function() {
 		var rc = color( random(0,255) , random(0,255) , random(0,255) , fillAlpha );
 		var la = random( minLerpAmt , maxLerpAmt );
 		this.c = lerpColor( baseFillColor , rc , la );
-	};
+	}
+	
+	
 	
 	// method to draw the body to the screen
 	this.draw = function() {
@@ -479,6 +493,23 @@ var BodySim = function( num ) {
 		}
 	};
 	
+	// method to remove bodies with zero mass
+	this.removeZeroMasses = function() {
+		ind = [];
+		for( var i = 0 ; i < this.N ; i++ ) {
+			if( (this.B[i].m === 0 ) ) {
+				append( ind,  i );
+				console.log( "REMOVED A BODY!" );
+				bodiesRemoved++;
+			}
+		}
+		this.N -= ind.length;
+		reverse( ind );
+		for( var i = 0 ; i < ind.length ; i++ ) {
+			this.B.splice( ind[i] , 1 );
+		}
+	}
+	
 	// method to draw the QuadTree divisions and color the populated children
 	this.drawTree = function( fillOn , divOn ) {
 		if( fillOn ) {
@@ -603,8 +634,8 @@ var BodySim = function( num ) {
 		
 		this.zeroAccelerations();
 		this.updateTree();
+		this.removeZeroMasses();
 		this.T.updateCenters();
-		this.removeZeroMasses;
 		if( bruteMethod ) {
 			this.applyMutualForcesBrute();
 		} else {
@@ -625,8 +656,8 @@ var BodySim = function( num ) {
 			}
 			this.zeroAccelerations();
 			this.updateTree();
+			this.removeZeroMasses();
 			this.T.updateCenters();
-			this.removeZeroMasses;
 			if( bruteMethod ) {
 				this.applyMutualForcesBrute();
 			} else {
@@ -640,22 +671,7 @@ var BodySim = function( num ) {
 		}
 	};
 	
-	// method to remove bodies with zero mass
-	this.removeZeroMasses = function() {
-		ind = [];
-		for( var i = 0 ; i < this.N ; i++ ) {
-			if( this.B[i].m === 0 ) {
-				append( ind,  i );
-				console.log( "removed a body!" );
-				bodiesRemoved++;
-			}
-		}
-		this.N -= ind.length;
-		reverse( ind );
-		for( var i = 0 ; i < ind.length ; i++ ) {
-			this.B.splice( ind[i] , 1 );
-		}
-	}
+	
 	
 };
 
