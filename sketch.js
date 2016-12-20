@@ -1,7 +1,7 @@
 function setupGlobalVariables() {
 	
 	// version number
-	versionNumber = '0.57';
+	versionNumber = '0.58';
 	// CANVAS VARIABLES
 	{
 		// set canvas size to fill the window
@@ -28,7 +28,7 @@ function setupGlobalVariables() {
 	// SIMULATION VARIABLES
 	{
 		// number of bodies
-		numBodies = 60;
+		numBodies = 64;
 		// simulation area
 		simArea = 100;
 		// linear conversion factor: sim to window
@@ -779,7 +779,7 @@ function draw() {
 	}
 
 	avgFrameTime = avgFrameTime*0.8 + (millis() - frameTimer)*0.2;
-	if( frameCount%20 === 0 ) {
+	if( frameCount%1000 === 0 ) {
 		console.log( "theta:" + theta +
 					 "   direct calc:" + directCalcCount +
 					 "   treeCalc:" +  treeCalcCount +
