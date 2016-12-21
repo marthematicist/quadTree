@@ -1,7 +1,7 @@
 function setupGlobalVariables() {
 	
 	// version number
-	versionNumber = '0.58';
+	versionNumber = '0.60';
 	// CANVAS VARIABLES
 	{
 		// set canvas size to fill the window
@@ -141,7 +141,7 @@ var Body = function() {
   if( type === 3) {
     this.x = p5.Vector.random2D();
     this.v = createVector( this.x.y , -this.x.x );
-    this.x.mult( random( 0.23*minExt , 0.35*minExt ) );
+    this.x.mult( random( 0.25*minExt , 0.5*minExt ) );
     var d = this.x.mag();
     this.v.mult( 2.0 * d );
   }
@@ -466,6 +466,23 @@ var QuadTree = function( center , halfDimX , halfDimY ) {
 			this.children[3].fillChildren();
 		}
 	}
+	
+	// method to draw 3D tree (WEBGL only)
+	this.draw3D = function( z ) {
+	  var x = this.com.x*sim2WinFactor*0.5;
+	  var y = this.com.y*sim2WinFactor*0.5;
+	  vertex( x , y , z );
+	  if( this.hasChildren ) {
+	    this.children[0].draw3D( z + 0.1*minRes );
+	    vertex( x , y , z );
+	    this.children[1].draw3D( z + 0.1*minRes );
+	    vertex( x , y , z );
+	    this.children[2].draw3D( z + 0.1*minRes );
+	    vertex( x , y , z );
+	    this.children[3].draw3D( z + 0.1*minRes );
+	    vertex( x , y , z );
+	  }
+	}
 };
 
 // CLASS BodySim
@@ -689,6 +706,7 @@ function setup() {
 	maxGen = 0;
 	maxRecDepth = 0;
 	
+	
 	// display beginning text
 	background( 0 , 0 , 0 );
 	textAlign( CENTER );
@@ -711,6 +729,7 @@ function setup() {
 			  "   avgMass=" + round(overallMass/numBodies*100)*0.01  + "\nG=" + universalConstant + "   epsilon=" + epsilon + "   theta=" + theta +
 			  "   dt=" + dt   , 0.5*xRes , yRes - 60 );
 	}
+	
 	startTimer = millis();
 }
 
@@ -733,19 +752,21 @@ function draw() {
 	// draw background
 	background( bgColor );
 	
-	// set one body under mouse
-	if( false ) {
-		S.B[0].v = createVector( 0 , 0 );
-		S.B[0].a = createVector( 0 , 0 );
-		S.B[0].m = 50*maxMass;
-		S.B[0].x = createVector( xMin + win2SimFactor*mouseX ,
-								 yMin + win2SimFactor*mouseY );
-		S.B[0].p = -1;
-	}
-	
 
 	// evolve the simulation full steps
 	S.evolveFullStep(1);
+	
+	/*
+	// draw 3D tree
+	stroke( 255 );
+	translate( 0 , 0 , -minRes );
+	rotateY( mouseX*0.01 + frameCount*0.01 );
+	rotateX( mouseY*0.01 );
+	beginShape();
+	S.T.draw3D( -0.5*minRes );
+	endShape();
+	*/
+	
 	
 	// draw centers of mass
 	if( drawCOM ) {
@@ -758,6 +779,7 @@ function draw() {
 	
 	// draw bodies
 	if( drawBodies ) { S.drawBodies(); }
+	
 	
 	// if mode changed recently, display mode
 	if( millis() - modeChangeTimer < modeChangeDisplayTime ) {
@@ -777,6 +799,7 @@ function draw() {
 			}
 		}
 	}
+	
 
 	avgFrameTime = avgFrameTime*0.8 + (millis() - frameTimer)*0.2;
 	if( frameCount%1000 === 0 ) {
