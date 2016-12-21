@@ -1,26 +1,36 @@
 function setupGlobalVariables() {
 	
 	// version number
-	versionNumber = '0.60';
+	versionNumber = '0.63';
 	// CANVAS VARIABLES
 	{
 		// set canvas size to fill the window
 		xRes = windowWidth;
 		yRes = windowHeight;
+		// area of window
 		winArea = xRes * yRes;
+		// min and max resolution
 		minRes = min( xRes , yRes );
 		maxRes = max( xRes , yRes );
 	}
 
 	// TIMING VARIABLES
 	{
+	  // used to track framerate
 		frameTimer = millis();
+		// time of last click (for double-click detection)
 		clickTimer = millis();
+		// min time between clicks for double-click detection (ms)
 		doubleClickTime = 400;
+		// time that setup was completed
 		startTimer = 0;
+		// amount of time to wait after setup before beginning simulation (title screen time)
 		startWaitTime = 4000;
+		// used to clear the screen after title
 		clearFirstTime = true;
+		// time that mode was last changed
 		modeChangeTimer = millis();
+		// amt of time to display the mode after a change
 		modeChangeDisplayTime = 4000;
 		
 	}
@@ -29,6 +39,8 @@ function setupGlobalVariables() {
 	{
 		// number of bodies
 		numBodies = 64;
+		// initial conditions
+		initCond = 3;
 		// simulation area
 		simArea = 100;
 		// linear conversion factor: sim to window
@@ -38,6 +50,7 @@ function setupGlobalVariables() {
 		// dimensions of the simulation
 		xExt = xRes * win2SimFactor;
 		yExt = yRes * win2SimFactor;
+		// the minimum dimension of the simulation
 		minExt = min( xExt , yExt );
 		// bounds of simulation
 		xMin = -0.5*xExt;
@@ -48,17 +61,16 @@ function setupGlobalVariables() {
 		simCenter = createVector( 0.5*( xMin + xMax ) , 0.5*( yMin + yMax ) );
 		// body mass variables
 		totalMass = 400;
-		massDev = 0.0;
+		massDev = 0.95;
 		avgMass = totalMass/numBodies;
 		minMass = (1-massDev)*avgMass;
 		maxMass = (1+massDev)*avgMass;
-		// probability of negative particle
-		negProb = 0.0;
 		// PHYSICS CONSTANTS
 		reversePhysics = false;
+		// simulation time per frame
 		dt = 1.0 / ( 400 );
 		// Edge velocity dampening
-		edgeSpringConstant = 1;
+		edgeNormalDamping = 0.05;
 		// Friction coefficients
 		frictionConstantAttract = 0.001;
 		frictionConstantRepel = 0.2;
@@ -71,8 +83,8 @@ function setupGlobalVariables() {
 		// mutual force comuptation algorithm: Brute or tree (Barnes-Hut)
 		bruteMethod = false;
 		// max recursion depth
-		maxDepth = 17;
-		maxRecDepth = 0;
+		maxDepth = 14;
+		
 	}
 	
 	// DRAW VARIABLES
@@ -85,34 +97,52 @@ function setupGlobalVariables() {
 		drawTreeFill = true;
 		drawTreeDiv = true;
 		drawCOM = false;
+		// threshold for deciding whther to draw center-of-mass
 		comDrawThreshold = 3.5*avgMass;
 		comSizeFactor = 1;
+		// color of tree divisions
 		divColor = color( 192 , 192 , 192 , 64 );
-		treeFillColor = color( 128 , 128 , 128 , 64 );
-		comColor = color( 196 , 196 , 0 , 1 );
+		// thickness of divisions
 		divWeight = 1;
+		// center of mass color
+		comColor = color( 196 , 196 , 0 , 1 );
 		// body draw variables
 		if( artMode ) {	drawBodies = false; }
 		else { drawBodies = true; }
+		// body diameter
 		bodyDiam = minRes*0.0055;
+		// body transparency
 		bodyAlpha = 128;
+		// body color
 		bodyColor = color( 255 , 255 , 255 , bodyAlpha );
+		// tree fill transparency
 		fillAlpha = 6;
+		// tree fill color (base from which body colors are randomized)
 		baseFillColor = color( 0 , 196 , 255 , fillAlpha );
+		// amount of randomization from base tree fill color
 		minLerpAmt = 0.5;
 		maxLerpAmt = 0.8;
+		// whether or not to do a random color
 		randomColor = true;
 		
 	}
 	
 	// RECORD-KEEPING VARIABLES
 	{
+		// total mass of simulation
 		overallMass = 0;
+		// number of direct calculations per frame (body-body)
 		directCalcCount = 0;
+		// number of direct calculations per frame (body-tree)
 		treeCalcCount = 0;
+		// number of bodies removed due to combination
 		bodiesRemoved = 0;
+		// running average of time between frames
 		avgFrameTime = 0;
+		// number of center-of-masses drawn per frame
 		comDrawn = 0;
+		// maximum depth of recursive tree
+		maxRecDepth = 0;
 	}
 }
 
@@ -126,22 +156,21 @@ function sim2WinVect( a ) {
 }
 
 // CLASS Body
-var Body = function() {
-	var type = 3;
+var Body = function( iC ) {
   // set initial position and velocity
-  if( type === 1) {
+  if( iC === 1) {
     this.x = createVector( random( xMin , xMax ) , random( yMin , yMax ) );
     this.v = createVector( 0 , 0 );
   }
-  if( type === 2) {
+  if( iC === 2) {
     this.x = p5.Vector.random2D();
     this.x.mult( random( 0 , 0.1*minExt ) );
     this.v = createVector( 0 , 0 );
   }
-  if( type === 3) {
+  if( iC === 3) {
     this.x = p5.Vector.random2D();
     this.v = createVector( this.x.y , -this.x.x );
-    this.x.mult( random( 0.25*minExt , 0.5*minExt ) );
+    this.x.mult( random( 0.25*minExt , 0.3*minExt ) );
     var d = this.x.mag();
     this.v.mult( 2.0 * d );
   }
@@ -149,27 +178,25 @@ var Body = function() {
 	this.a = createVector( 0 , 0 );
 	// m = mass
 	this.m = random( minMass , maxMass );
+	// diameter
+	this.d = sqrt(this.m/avgMass)*bodyDiam;
 	// c = color
 	this.c = bodyColor;
-	// p = charge (1 or -1)
-	if( random(0,1) < negProb ) { this.p = -1; } else { this.p = 1; }
 	// treeLoc = location in QuadTree: array of integers
 	this.treeLoc = [];
+	// randomize color
 	if( randomColor ) {
 		var rc = color( random(0,255) , random(0,255) , random(0,255) , fillAlpha );
 		var la = random( minLerpAmt , maxLerpAmt );
 		this.c = lerpColor( baseFillColor , rc , la );
 	}
 	
-	
-	
-	// method to draw the body to the screen
+	// Body: method to draw the body to the screen
 	this.draw = function() {
 		if( this.m > 0 ) {
-			//fill( 255-red(this.c) , 255-blue(this.c) , 255-green(this.c) , bodyAlpha );
 			fill( bodyColor );
 			var c = sim2WinVect( this.x );
-			ellipse( c.x , c.y , bodyDiam , bodyDiam );
+			ellipse( c.x , c.y , this.d , this.d );
 		}
 	}
 };
@@ -183,22 +210,32 @@ function createQuadTree( center , halfDimX , halfDimY ) {
 
 // CLASS QuadTree
 var QuadTree = function( center , halfDimX , halfDimY ) {
+  // is it the root of the tree?
 	this.isRoot = false;
+	// does it have children (branches)?
 	this.hasChildren = false;
+	// does it contain a body (is it a leaf)?
 	this.hasBody = false;
+	// 2D vector of center
 	this.center = center;
+	// dist from center to edge in both dimensions
 	this.halfDimX = halfDimX;
 	this.halfDimY = halfDimY;
 	this.halfDimMin = min(halfDimX , halfDimY);
+	// array of QuadTrees (recursive)
 	this.children = new Array(4);
+	// this QuadTree's parent
 	this.parent = 0;
+	// this QuadTree's body
 	this.body = 0;
-	this.numGenerations = 0;
+  // depth from root
 	this.depth = 0;
+	// center of mass (2d Vector)
 	this.com = 0;
+	// total mass contained in this tree and all children
 	this.totalMass = 0;
 	
-	// method to determine which child a body belongs in
+	// QuadTree: method to determine which child a body belongs in
 	// returns integer: NE = 0 , NW = 1 , SW = 2 , SE = 3
 	this.whichChild = function( b ) {
 		// if north
@@ -217,7 +254,7 @@ var QuadTree = function( center , halfDimX , halfDimY ) {
 		}
 	}
 	
-	// method to add children to a tree
+	// QuadTree: method to add children to a tree
 	this.createChildren = function() {
 		this.children = new Array(4);
 		var c0 = createVector( this.center.x + 0.5*this.halfDimX ,
@@ -242,21 +279,13 @@ var QuadTree = function( center , halfDimX , halfDimY ) {
 		this.children[3].depth = this.depth + 1;
 		this.hasChildren = true;
 		
-		this.changeParentNumGenerations( 1 );
+
 		
 		if( this.depth > maxRecDepth ) { maxRecDepth = this.depth; }
 	}
 	
-	// method to increment parent generation counts
-	this.changeParentNumGenerations = function( a ) {
-		//console.log( this.numGenerations );
-		this.numGenerations += a;
-		if( !this.isRoot ) {
-			this.parent.changeParentNumGenerations( a );
-		}
-	};
 	
-	// method to add a body to a tree (recursive)
+	// QuadTree: method to add a body to a tree (recursive)
 	this.addBody = function( b ) {
 		// if there are already children, add the body to the
 		// appropriate child
@@ -282,7 +311,7 @@ var QuadTree = function( center , halfDimX , halfDimY ) {
 					// and keeping the other with mass = sum of the bodies
 					// momentum is conserved
 					// charge will be the charge of the more massive body
-					var a = new Body();
+					var a = new Body( initCond );
 					// new position
 					a.x = p5.Vector.lerp( b.x , this.body.x , b.m / ( b.m + this.body.m ) );
 					// momentum for bodies
@@ -294,16 +323,13 @@ var QuadTree = function( center , halfDimX , halfDimY ) {
 					a.m = b.m + this.body.m;
 					// new color
 					a.c = lerpColor( b.c , this.body.c , b.m / ( b.m + this.body.m ) );
-					// new charge
-					if( b.m > this.body.m ) { a.p = b.p; }
-					else { a.p = this.body.p; }
 					// set this.body to new body
 					this.body.x = createVector( a.x.x , a.x.y );
 					this.body.v = createVector( a.v.x , a.v.y );
 					this.body.a = createVector( 0 , 0 );
 					this.body.c = a.c;
 					this.body.m = a.m;
-					this.body.p = a.p;
+					this.body.d = sqrt(this.body.m/avgMass)*bodyDiam;
 					// set other body for removal
 					b.m = 0;
 				}
@@ -316,7 +342,7 @@ var QuadTree = function( center , halfDimX , halfDimY ) {
 		}
 	}
 	
-	// method to update center of mass and total mass for tree
+	// QuadTree: method to update center of mass and total mass for tree
 	this.updateCenters = function() {
 		// if there are children, call function on children,
 		// then use children's center of mass to find own COM
@@ -358,7 +384,7 @@ var QuadTree = function( center , halfDimX , halfDimY ) {
 		}
 	};
 	
-	// method to get resultant acceleration on a body (b) from tree
+	// QuadTree: method to get resultant acceleration on a body (b) from tree
 	this.getResultantAcc = function( b ) {
 		var x1 = createVector( b.x.x , b.x.y );
 		var m1 = b.m;
@@ -413,7 +439,7 @@ var QuadTree = function( center , halfDimX , halfDimY ) {
 		}
 	};
 	
-	// method to draw centers of mass
+	// QuadTree: method to draw centers of mass
 	this.drawCentersOfMass = function() {
 		if( this.totalMass > comDrawThreshold ) {
 			fill( comColor );
@@ -434,7 +460,7 @@ var QuadTree = function( center , halfDimX , halfDimY ) {
 		}
 	};
 	
-	// method to draw divisions
+	// QuadTree: method to draw divisions
 	this.drawDiv = function() {
 		if( this.hasChildren ) {
 			var c = sim2WinVect( this.center );
@@ -450,7 +476,7 @@ var QuadTree = function( center , halfDimX , halfDimY ) {
 		}
 	}
 	
-	// method to color children with bodies
+	// QuadTree: method to color children with bodies
 	this.fillChildren = function() {
 		if( this.hasBody ) {
 			fill( this.body.c );
@@ -467,7 +493,7 @@ var QuadTree = function( center , halfDimX , halfDimY ) {
 		}
 	}
 	
-	// method to draw 3D tree (WEBGL only)
+	// QuadTree: method to draw 3D tree (WEBGL only)
 	this.draw3D = function( z ) {
 	  var x = this.com.x*sim2WinFactor*0.5;
 	  var y = this.com.y*sim2WinFactor*0.5;
@@ -495,14 +521,14 @@ var BodySim = function( num ) {
 	this.T = createQuadTree( simCenter , 0.5*xExt , 0.5*yExt );
 	// define bodies and populate the quadTree
 	for( var i = 0 ; i < numBodies ; i++ ) {
-		this.B[i] = new Body();
+		this.B[i] = new Body( initCond );
 		this.T.addBody( this.B[i] );
 	}
 	this.T.updateCenters();
 	overallMass = this.T.totalMass;
 	
 	
-	// method to draw the bodies
+	// BodySim: method to draw the bodies
 	this.drawBodies = function() {
 		noStroke();
 		for( var i = 0 ; i < this.N ; i++ ) {
@@ -510,7 +536,7 @@ var BodySim = function( num ) {
 		}
 	};
 	
-	// method to remove bodies with zero mass
+	// BodySim: method to remove bodies with zero mass
 	this.removeZeroMasses = function() {
 		ind = [];
 		for( var i = 0 ; i < this.N ; i++ ) {
@@ -527,7 +553,7 @@ var BodySim = function( num ) {
 		}
 	}
 	
-	// method to draw the QuadTree divisions and color the populated children
+	// BodySim: method to draw the QuadTree divisions and color the populated children
 	this.drawTree = function( fillOn , divOn ) {
 		if( fillOn ) {
 			// fill the tree
@@ -542,7 +568,7 @@ var BodySim = function( num ) {
 		}
 	};
 	
-	// method to update the QuadTree
+	// BodySim: method to update the QuadTree
 	this.updateTree = function() {
 		this.T = createQuadTree( simCenter , 0.5*xExt , 0.5*yExt );
 		// populate the quadTree
@@ -551,14 +577,14 @@ var BodySim = function( num ) {
 		}
 	};
 	
-	// method to zero all accelerations
+	// BodySim: method to zero all accelerations
 	this.zeroAccelerations = function() {
 		for( var i = 0 ; i < this.N ; i++ ) {
 			this.B[i].a = createVector( 0 , 0 );
 		}
 	};
 	
-	// method to apply friction forces to all bodies
+	// BodySim: method to apply friction forces to all bodies
 	this.applyFrictionForces = function() {
 		for( var i = 0 ; i < this.N ; i++ ) {
 			dA = createVector( this.B[i].v.x , this.B[i].v.y );
@@ -571,7 +597,7 @@ var BodySim = function( num ) {
 		}
 	};
 	 
-	// method to apply mutual forces to all bodies (BRUTE)
+	// BodySim: method to apply mutual forces to all bodies (BRUTE)
 	this.applyMutualForcesBrute = function() {
 		// do for each body
 		for( var i = 0 ; i < this.N - 1 ; i++ ) {
@@ -608,7 +634,7 @@ var BodySim = function( num ) {
 		}
 	};
 	
-	// method to apply mutual forces to all bodies (TREE)
+	// BodySim: method to apply mutual forces to all bodies (TREE)
 	this.applyMutualForcesTree = function() {
 		// do for each body
 		for( var i = 0 ; i < this.N ; i++ ) {
@@ -621,7 +647,7 @@ var BodySim = function( num ) {
 		}
 	};
 	
-	// method to apply edge forces
+	// BodySim: method to apply edge forces
 	this.applyEdgeForces = function() {
 		for( var i = 0 ; i < this.N ; i++ ) {
 			var x = this.B[i].x.x;
@@ -629,24 +655,32 @@ var BodySim = function( num ) {
 
 			if( this.B[i].x.x < xMin ) {
 				this.B[i].x.x = xMin;
-				this.B[i].v.x = abs( this.B[i].v.x * edgeSpringConstant );
+				this.B[i].v.x = abs( this.B[i].v.x * (1-edgeNormalDamping) );
+				//this.B[i].v.x = abs( this.B[i].v.x );
+				//this.B[i].v.mult( (1-edgeNormalDamping) );
 			}
 			if( this.B[i].x.y < yMin ) {
 				this.B[i].x.y = yMin;
-				this.B[i].v.y = abs( this.B[i].v.y * edgeSpringConstant );
+				this.B[i].v.y = abs( this.B[i].v.y * (1-edgeNormalDamping) );
+				//this.B[i].v.y = abs( this.B[i].v.y );
+				//this.B[i].v.mult( (1-edgeNormalDamping) );
 			}
 			if( this.B[i].x.x > xMax ) {
 				this.B[i].x.x = xMax;
-				this.B[i].v.x = -abs( this.B[i].v.x * edgeSpringConstant );
+				this.B[i].v.x = -abs( this.B[i].v.x * (1-edgeNormalDamping) );
+				//this.B[i].v.x = -abs( this.B[i].v.x );
+				//this.B[i].v.mult( (1-edgeNormalDamping) );
 			}
 			if( this.B[i].x.y > yMax ) {
 				this.B[i].x.y = yMax;
-				this.B[i].v.y = -abs( this.B[i].v.y * edgeSpringConstant );
+				this.B[i].v.y = -abs( this.B[i].v.y * (1-edgeNormalDamping) );
+				//this.B[i].v.y = -abs( this.B[i].v.y );
+				//this.B[i].v.mult( (1-edgeNormalDamping) );
 			}
 		}
 	};
 	
-	// method to evolve the simulation 1/2 step
+	// BodySim: method to evolve the simulation 1/2 step
 	this.evolveHalfStep = function() {
 		
 		this.zeroAccelerations();
@@ -665,7 +699,7 @@ var BodySim = function( num ) {
 		}
 	};
 	
-	// method to evolve the simulation num full steps
+	// BodySim: method to evolve the simulation num full steps
 	this.evolveFullStep = function( num ) {
 		for( var n = 0 ; n < num ; n++ ) {
 			for( var i = 0 ; i < this.N ; i++ ) {
@@ -726,7 +760,7 @@ function setup() {
 		text( "artMode" , 0.5*xRes , yRes - 60 );
 	} else {
 		text( "N=" + numBodies + "   field dimensions=" + round(xExt*100)/100 + "x" + round(yExt*100)/100 +
-			  "   avgMass=" + round(overallMass/numBodies*100)*0.01  + "\nG=" + universalConstant + "   epsilon=" + epsilon + "   theta=" + theta +
+			  "   avgMass=" + round(overallMass/numBodies*100)/100  + "\nG=" + universalConstant + "   epsilon=" + epsilon + "   theta=" + theta +
 			  "   dt=" + dt   , 0.5*xRes , yRes - 60 );
 	}
 	
