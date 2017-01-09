@@ -1,7 +1,7 @@
 function setupGlobalVariables() {
 	
 	// version number
-	versionNumber = '0.63';
+	versionNumber = '0.64';
 	// CANVAS VARIABLES
 	{
 		// set canvas size to fill the window
@@ -40,7 +40,7 @@ function setupGlobalVariables() {
 		// number of bodies
 		numBodies = 64;
 		// initial conditions
-		initCond = 3;
+		initCond = 1;
 		// simulation area
 		simArea = 100;
 		// linear conversion factor: sim to window
