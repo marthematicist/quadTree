@@ -1,7 +1,7 @@
 function setupGlobalVariables() {
 	
 	// version number
-	versionNumber = '0.64';
+	versionNumber = '0.65';
 	// CANVAS VARIABLES
 	{
 		// set canvas size to fill the window
@@ -788,7 +788,9 @@ function draw() {
 	
 
 	// evolve the simulation full steps
-	S.evolveFullStep(1);
+	if( !mouseIsPressed ) {
+		S.evolveFullStep(1);
+	}
 	
 	/*
 	// draw 3D tree
